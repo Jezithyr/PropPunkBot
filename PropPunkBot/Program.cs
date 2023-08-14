@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using Discord;
+using Discord.Commands;
 using Discord.WebSocket;
 using Npgsql;
 using PropPunkBot;
@@ -20,6 +21,9 @@ var techs = await connection.QueryAsync("SELECT * FROM technologies");
 Console.WriteLine(techs.ToList());
 
 var client = new DiscordSocketClient();
+var commands = new CommandHandler(client, new CommandService());
+await commands.InstallCommandsAsync();
+
 client.Log += msg => Console.Out.WriteLineAsync($"[{msg.Severity}]: {msg.Message}");
 
 await client.LoginAsync(TokenType.Bot, Environment.GetEnvironmentVariable("DISCORD_TOKEN"));

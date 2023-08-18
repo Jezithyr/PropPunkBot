@@ -1,4 +1,4 @@
-﻿namespace PropPunkBot.Database;
+﻿namespace PeaceKeeper.Database;
 
 public enum TechnologyUse
 {

@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PropPunkBot", "PropPunkBot\PropPunkBot.csproj", "{273056E9-EAB1-432E-8D33-06E4BAF45F59}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PeaceKeeper", "PeaceKeeper\PeaceKeeper.csproj", "{273056E9-EAB1-432E-8D33-06E4BAF45F59}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

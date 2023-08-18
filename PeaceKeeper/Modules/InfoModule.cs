@@ -1,6 +1,6 @@
 ﻿using Discord.Commands;
 
-namespace PropPunkBot;
+namespace PeaceKeeper.Modules;
 
 public class InfoModule : ModuleBase<SocketCommandContext>
 {

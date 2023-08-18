@@ -1,4 +1,4 @@
-﻿namespace PropPunkBot;
+﻿namespace PeaceKeeper;
 
 public static class Env
 {

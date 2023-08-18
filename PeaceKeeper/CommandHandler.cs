@@ -2,7 +2,7 @@
 using Discord.Commands;
 using Discord.WebSocket;
 
-namespace PropPunkBot;
+namespace PeaceKeeper;
 
 public class CommandHandler
 {

@@ -1,4 +1,4 @@
-﻿namespace PeaceKeeper.Database;
+namespace PeaceKeeper.Database;
 
 public enum TechnologyUse
 {
@@ -6,3 +6,11 @@ public enum TechnologyUse
     Military = 1 << 1,
     Both = Civilian | Military
 }
+
+public enum GovernmentStatus
+{
+    InPower,
+    Collapsed,
+    InExile
+}
+

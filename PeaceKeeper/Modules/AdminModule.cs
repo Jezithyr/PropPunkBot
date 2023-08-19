@@ -15,7 +15,7 @@ public partial class AdminModule : InteractionModuleBase
         await using var connection = DatabaseConnection.Get();
 
         var userdata = await connection.QuerySingleOrDefaultAsync<User>("SELECT * FROM users WHERE id = @id LIMIT 1",
-            new {id = (long) Context.User.Id});
+            new {id = (long) user.Id});
         if (userdata == null)
         {
             await FollowupAsync($"User {user.Username} was not found!");

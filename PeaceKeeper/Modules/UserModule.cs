@@ -33,4 +33,22 @@ public sealed class UserModule : InteractionModuleBase
             await FollowupAsync("User already registered");
         }
     }
+    [SlashCommand("unregister", "unregister from the prop-punk universe")]
+    public async Task UnRegister()
+    {
+        await DeferAsync();
+        await using var connection = DatabaseConnection.Get();
+
+        var userdata = await connection.QuerySingleOrDefaultAsync<User>("SELECT * FROM users WHERE id = @id LIMIT 1",
+            new {id = (long) Context.User.Id});
+        if (userdata == null)
+        {
+            await FollowupAsync($"You are not registered!");
+        }
+        else
+        {
+            await connection.QueryAsync("DELETE FROM users where id = @id", new {id = (long) Context.User.Id});
+            await FollowupAsync($"Removed you from the prop-punk universe.");
+        }
+    }
 }

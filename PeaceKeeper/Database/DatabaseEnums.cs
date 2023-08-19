@@ -7,6 +7,26 @@ public enum TechnologyUse
     Both = Civilian | Military
 }
 
+public enum TechField
+{
+    Generic,
+    Infrastructure,
+    Industry,
+    Materials,
+    Economy,
+    Strategy,
+    Sociology,
+    Biology,
+    Electronics,
+    Physics,
+    Mechanics,
+    Chemistry,
+    Aerospace,
+    Nautical,
+    Munitions,
+    Weaponry
+}
+
 public enum GovernmentStatus
 {
     InPower,

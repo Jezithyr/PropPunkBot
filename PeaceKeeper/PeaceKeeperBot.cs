@@ -50,7 +50,15 @@ public sealed class PeaceKeeperBot
 
     private async Task OnInteractionCreated(SocketInteraction interaction)
     {
-        var ctx = new SocketInteractionContext(Client, interaction);
-        await InteractionService.ExecuteCommandAsync(ctx, null);
+        try
+        {
+            var ctx = new SocketInteractionContext(Client, interaction);
+            await InteractionService.ExecuteCommandAsync(ctx, null);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine($"[Exception] {e}");
+            throw;
+        }
     }
 }

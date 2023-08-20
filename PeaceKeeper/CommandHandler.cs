@@ -8,11 +8,13 @@ public class CommandHandler
 {
     private readonly DiscordSocketClient _client;
     private readonly CommandService _commands;
+    private readonly IServiceProvider _services;
 
-    public CommandHandler(DiscordSocketClient client, CommandService commands)
+    public CommandHandler(DiscordSocketClient client, CommandService commands, IServiceProvider services)
     {
         _client = client;
         _commands = commands;
+        _services = services;
     }
 
     public async Task InstallCommandsAsync()
@@ -29,7 +31,7 @@ public class CommandHandler
         // If you do not use Dependency Injection, pass null.
         // See Dependency Injection guide for more information.
         await _commands.AddModulesAsync(assembly: Assembly.GetEntryAssembly(),
-            services: null);
+            services: _services);
     }
 
     private async Task HandleCommandAsync(SocketMessage messageParam)
@@ -55,6 +57,6 @@ public class CommandHandler
         await _commands.ExecuteAsync(
             context: context,
             argPos: argPos,
-            services: null);
+            services: _services);
     }
 }

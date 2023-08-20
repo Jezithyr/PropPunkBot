@@ -34,3 +34,9 @@ public enum GovernmentStatus
     InExile
 }
 
+public enum BotEnvironment
+{
+    CommunityServer = 0,
+    LiveServer,
+    Development,
+}

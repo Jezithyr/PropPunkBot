@@ -2,9 +2,11 @@ using Npgsql;
 
 namespace PeaceKeeper.Database;
 
-public sealed class DatabaseConnection
+public sealed class DbService
 {
-    public static NpgsqlConnection Get()
+    private readonly NpgsqlDataSource _source;
+
+    public DbService()
     {
         var connString = new NpgsqlConnectionStringBuilder
         {
@@ -13,8 +15,13 @@ public sealed class DatabaseConnection
             Database = Environment.GetEnvironmentVariable("DATABASE_NAME"),
             Username = Environment.GetEnvironmentVariable("DATABASE_USERNAME"),
             Password = Environment.GetEnvironmentVariable("DATABASE_PASSWORD")
-        }.ConnectionString;
+        };
 
-        return new NpgsqlConnection(connString);
+        _source = NpgsqlDataSource.Create(connString);
+    }
+
+    public ValueTask<NpgsqlConnection> Get()
+    {
+        return _source.OpenConnectionAsync();
     }
 }

@@ -1,11 +1,14 @@
 
+using System.ComponentModel.Design;
 using System.Reflection;
 using Dapper;
 using Discord;
 using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
+using Microsoft.Extensions.DependencyInjection;
 using PeaceKeeper.Database;
+using PeaceKeeper.Services;
 
 namespace PeaceKeeper;
 
@@ -15,12 +18,20 @@ public sealed class PeaceKeeperBot
     public CommandHandler Commands { get; init; }
     public DiscordSocketClient Client { get; init; }
     public InteractionService InteractionService { get; init; }
+    private readonly IServiceProvider _services;
 
     private PeaceKeeperBot()
     {
-        Client = new DiscordSocketClient();
+        var services = new ServiceCollection();
+        services.AddSingleton<SettingsService>();
+        services.AddSingleton<DiscordSocketClient>();
+        services.AddSingleton<DbService>();
+        _services = services.BuildServiceProvider();
+
+        Client = _services.GetRequiredService<DiscordSocketClient>();
+
         Commands = 
-            new CommandHandler(Client, new CommandService());
+            new CommandHandler(Client, new CommandService(), _services);
         InteractionService = new InteractionService(Client.Rest);
     }
 
@@ -35,8 +46,12 @@ public sealed class PeaceKeeperBot
     {
         Client.Ready += OnClientReady;
         Client.InteractionCreated += OnInteractionCreated;
+        Client.UserCommandExecuted += command =>
+        {
+            return Task.CompletedTask;
+        };
         await Commands.InstallCommandsAsync();
-        await InteractionService.AddModulesAsync(Assembly.GetEntryAssembly(), null);
+        await InteractionService.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
     }
 
     private async Task OnClientReady()
@@ -53,7 +68,7 @@ public sealed class PeaceKeeperBot
         try
         {
             var ctx = new SocketInteractionContext(Client, interaction);
-            await InteractionService.ExecuteCommandAsync(ctx, null);
+            await InteractionService.ExecuteCommandAsync(ctx, _services);
         }
         catch (Exception e)
         {

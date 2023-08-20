@@ -15,7 +15,7 @@ public partial class AdminModule
             await FollowupAsync("Technology name is too long, must be less than 128 characters!");
             return;
         }
-        await using var connection = DatabaseConnection.Get();
+        await using var connection = await _db.Get();
         var tech = await connection.QuerySingleOrDefaultAsync<Technology>(
             "SELECT * FROM technologies WHERE name = @name LIMIT 1",
             new {name = techName});
@@ -42,7 +42,7 @@ public partial class AdminModule
             return;
         }
         
-        await using var connection = DatabaseConnection.Get();
+        await using var connection = await _db.Get();
         var tech = await connection.QuerySingleOrDefaultAsync<Technology>(
             "SELECT * FROM technologies WHERE name = @name LIMIT 1",
             new {name = techName});

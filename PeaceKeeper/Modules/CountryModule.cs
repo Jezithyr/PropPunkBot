@@ -5,17 +5,23 @@ using PeaceKeeper.Database;
 
 namespace PeaceKeeper.Modules;
 
-
 [Group("country", "country actions for prop-punk")]
 public sealed class CountryModule : InteractionModuleBase
 {
+    private readonly DbService _db;
+
+    public CountryModule(DbService db)
+    {
+        _db = db;
+    }
+
     [UserCommand("Get Country")]
     public async Task GetCountry(IUser user)
     {
         await DeferAsync();
-        await using var connection = DatabaseConnection.Get();
+        await using var connection = await _db.Get();
 
-        var userdata = await connection.QuerySingleOrDefaultAsync<User>("SELECT * FROM users WHERE id = @id LIMIT 1",
+        var userdata = await connection.QuerySingleOrDefaultAsync<UserRaw>("SELECT * FROM users WHERE id = @id LIMIT 1",
             new {id = (long) user.Id});
         if (userdata == null)
         {

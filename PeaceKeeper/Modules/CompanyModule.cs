@@ -8,13 +8,20 @@ namespace PeaceKeeper.Modules;
 [Group("company", "company actions for prop-punk")]
 public sealed class CompanyModule: InteractionModuleBase
 {
+    private readonly DbService _db;
+
+    public CompanyModule(DbService db)
+    {
+        _db = db;
+    }
+
     [UserCommand("Get Company")]
     public async Task GetCompany(IUser user)
     {
         await DeferAsync();
-        await using var connection = DatabaseConnection.Get();
+        await using var connection = await _db.Get();
 
-        var userdata = await connection.QuerySingleOrDefaultAsync<User>("SELECT * FROM users WHERE id = @id LIMIT 1",
+        var userdata = await connection.QuerySingleOrDefaultAsync<UserRaw>("SELECT * FROM users WHERE id = @id LIMIT 1",
             new {id = (long) user.Id});
         if (userdata != null)
         {

@@ -7,7 +7,6 @@ namespace PeaceKeeper.Modules;
 
 public partial class AdminModule
 {
-    
     [SlashCommand("createcountry", "create a new country")]
     public async Task CreateCountry(string countryName, string shortName)
     {
@@ -23,8 +22,7 @@ public partial class AdminModule
             return;
         }
         
-        
-        await using var connection = DatabaseConnection.Get();
+        await using var connection = await _db.Get();
         //TODO: check if user is on the mod-list
         var country = await connection.QuerySingleOrDefaultAsync<Country>("SELECT * FROM countries WHERE name = @name LIMIT 1",
             new {name = countryName});
@@ -40,6 +38,7 @@ public partial class AdminModule
             await FollowupAsync($"Country with name: {countryName} already exists!");
         }
     }
+
     [SlashCommand("assigntocountry", "assign a country to a user")]
     public async Task AssignToCountry(IUser user,string countryName, bool makeOwner, bool reassign = true)
     {
@@ -50,9 +49,9 @@ public partial class AdminModule
             return;
         }
 
-        await using var connection = DatabaseConnection.Get();
+        await using var connection = await _db.Get();
         //TODO: check if user is on the mod-list
-        var userData = await connection.QuerySingleOrDefaultAsync<User>(
+        var userData = await connection.QuerySingleOrDefaultAsync<UserRaw>(
             "SELECT * FROM users WHERE id = @id LIMIT 1",
             new {id =(long) user.Id});
         
@@ -84,7 +83,7 @@ public partial class AdminModule
                 new {countryid = countryData.Id});
         }
             
-        await connection.QueryAsync<User>(
+        await connection.QueryAsync<UserRaw>(
             "UPDATE users SET country = @country, leader = @leader WHERE id = @id",
             new {id = (long) user.Id, country = countryData.Id, leader = makeOwner});
         if (makeOwner)

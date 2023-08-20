@@ -21,7 +21,7 @@ public partial class AdminModule
             await FollowupAsync("Company Tag must be 4 characters or less!");
             return;
         }
-        await using var connection = DatabaseConnection.Get();
+        await using var connection = await _db.Get();
         //TODO: check if user is on the mod-list
         var country = await connection.QuerySingleOrDefaultAsync<Company>("SELECT * FROM companies WHERE name = @name LIMIT 1",
             new {name = companyName});
@@ -49,9 +49,9 @@ public partial class AdminModule
             return;
         }
 
-        await using var connection = DatabaseConnection.Get();
+        await using var connection = await _db.Get();
         //TODO: check if user is on the mod-list
-        var userData = await connection.QuerySingleOrDefaultAsync<User>(
+        var userData = await connection.QuerySingleOrDefaultAsync<UserRaw>(
             "SELECT * FROM users WHERE id = @id LIMIT 1",
             new {id = (long)user.Id});
         

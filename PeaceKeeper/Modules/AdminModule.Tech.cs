@@ -1,6 +1,7 @@
 using Dapper;
 using Discord.Interactions;
 using PeaceKeeper.Database;
+using PeaceKeeper.Database.Models;
 
 namespace PeaceKeeper.Modules;
 

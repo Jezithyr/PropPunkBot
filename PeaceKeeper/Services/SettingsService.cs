@@ -1,5 +1,7 @@
 using Dapper;
+using Npgsql;
 using PeaceKeeper.Database;
+using PeaceKeeper.Database.Models;
 
 namespace PeaceKeeper.Services;
 
@@ -12,9 +14,13 @@ public sealed class SettingsService
         _db = db;
     }
 
-    public async Task<Settings?> GetSettings(ulong guild)
+    public async Task<Settings?> GetSettings(ulong guild, NpgsqlConnection? dbConnection = null)
     {
-        await using var db = await _db.Get();
-        return await db.QuerySingleOrDefaultAsync<Settings>("SELECT * FROM settings WHERE guild = @guild", new { guild = (long) guild });
+        if (dbConnection == null)
+        {
+            await using var db = await _db.Get();
+            return await db.QuerySingleOrDefaultAsync<Settings>("SELECT * FROM settings WHERE guild = @guild", new { guild = (long) guild });
+        }
+        return await dbConnection.QuerySingleOrDefaultAsync<Settings>("SELECT * FROM settings WHERE guild = @guild", new { guild = (long) guild });
     }
 }

@@ -42,5 +42,31 @@ public sealed class CountryService
             "SELECT * FROM countries WHERE shortname = @code LIMIT 1",
             new {code = countryCode});
     }
+    public async Task<bool> AssignUser(IUser user, Guid countryId, bool makeOwner = true ,
+        NpgsqlConnection? dbConnection = null)
+    {
+        await using var connection = await _db.ResolveDatabase(dbConnection);
+        var countryData = await GetCountry(countryId, dbConnection);
+        var userData = await _users.GetUser(user, dbConnection);
+        if (countryData == null || userData == null) return false;
+        if (makeOwner)
+        {
+            await connection.QueryAsync(
+                "UPDATE users SET leader = false WHERE country = @countryid",
+                new {countryid = countryId});
+        }
+        await connection.QueryAsync<UserRaw>(
+            "UPDATE users SET country = @country, leader = @leader WHERE id = @id",
+            new {id = (long) user.Id, country = countryId, leader = makeOwner});
+        return true;
+    }
 
+    public async Task<bool> AssignUser(IUser user, string countryName, bool makeOwner = true,
+        NpgsqlConnection? dbConnection = null)
+    {
+        await using var connection = await _db.ResolveDatabase(dbConnection);
+        var countryData = await GetCountry(countryName, dbConnection);
+        if (countryData == null) return false;
+        return await AssignUser(user, countryData.Id, makeOwner, dbConnection);
+    }
 }

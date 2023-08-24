@@ -15,7 +15,7 @@ public sealed class UserService
         _db = db;
     }
 
-    public async Task<User?> GetInfo(long userid, NpgsqlConnection? dbConnection = null)
+    public async Task<User?> GetUser(long userid, NpgsqlConnection? dbConnection = null)
     {
         await using var connection = await _db.ResolveDatabase(dbConnection);
         var users = await connection.QueryAsync<UserRaw, Country, Company, User>(
@@ -30,10 +30,40 @@ public sealed class UserService
         return users?.SingleOrDefault();
     }
 
-    public async Task<User?> GetInfo(IUser user, NpgsqlConnection? dbConnection = null)
+    public async Task<User?> GetUser(IUser user, NpgsqlConnection? dbConnection = null)
+    {
+        return await GetUser((long) user.Id, dbConnection);
+    }
+
+    public async Task<bool> Remove(long userid, NpgsqlConnection? dbConnection = null)
+    {
+         await using var connection = await _db.ResolveDatabase(dbConnection);
+         var user = await GetUser(userid, dbConnection);
+         if (user == null) return false;
+         await connection.QueryAsync("DELETE FROM users where id = @id", new {id = userid});
+         return true;
+    }
+
+    public async Task<bool> Remove(IUser user, NpgsqlConnection? dbConnection = null)
+    {
+        return await Remove((long)user.Id, dbConnection);
+    }
+
+    public async Task<bool> Add(long userid, NpgsqlConnection? dbConnection = null)
     {
         await using var connection = await _db.ResolveDatabase(dbConnection);
-        return await GetInfo((long) user.Id, dbConnection);
+        var user = await GetUser(userid, dbConnection);
+        if (user != null) return false;
+
+        await connection.QuerySingleAsync<long>(
+            "INSERT INTO users(id) VALUES(@id) ON CONFLICT DO NOTHING RETURNING -1",
+            new {id = userid});
+        return true;
+    }
+
+    public async Task<bool> Add(IUser user, NpgsqlConnection? dbConnection = null)
+    {
+        return await Add((long)user.Id, dbConnection);
     }
 
 }

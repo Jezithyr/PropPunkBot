@@ -24,4 +24,13 @@ public sealed class DbService
     {
         return _source.OpenConnectionAsync();
     }
+
+    public async ValueTask<NpgsqlConnection> ResolveDatabase(NpgsqlConnection? dbConnection)
+    {
+        if (dbConnection == null)
+        {
+            return await Get();
+        }
+        return dbConnection;
+    }
 }

@@ -7,4 +7,9 @@ public record ServerSettings(
     string CountryAppsUrl,
     string CompanyAppsUrl);
 
-
+public enum BotEnvironment
+{
+    CommunityServer = 0,
+    LiveServer,
+    Development,
+}

@@ -1,12 +1,30 @@
 using Dapper;
 using Npgsql;
+using PeaceKeeper.Database;
 using PeaceKeeper.Database.Models;
 
 namespace PeaceKeeper.Services;
 
 public partial class ResearchService
 {
-    public async Task<List<Technology>> GetCompanyResearchedTechs(Guid companyId,
+    public async Task<HashSet<Technology>> GetValidTechsForCompany(Guid companyId,
+        NpgsqlConnection? dbConnection = null)
+    {
+        await using var connection = await _db.ResolveDatabase(dbConnection);
+        HashSet<Technology> researchedTechs = await GetCompanyResearchedTechs(companyId, connection);
+        return await GetValidTechs(researchedTechs, connection);
+
+    }
+
+    public async Task<HashSet<Technology>> GetValidTechsForCompany(Guid companyId, TechField techField,
+        NpgsqlConnection? dbConnection = null)
+    {
+        await using var connection = await _db.ResolveDatabase(dbConnection);
+        HashSet<Technology> researchedTechs = await GetCompanyResearchedTechsInField(companyId, techField, connection);
+        return await GetValidTechs(researchedTechs, connection);
+    }
+
+    public async Task<HashSet<Technology>> GetCompanyResearchedTechs(Guid companyId,
         NpgsqlConnection? dbConnection = null)
     {
         await using var connection = await _db.ResolveDatabase(dbConnection);
@@ -28,9 +46,41 @@ public partial class ResearchService
                 }
             );
 
-        var techlist = new List<Technology>();
+        var techlist = new HashSet<Technology>();
         if (completedProgress == null)
-            return new List<Technology>();
+            return new HashSet<Technology>();
+        foreach (var progress in completedProgress)
+        {
+            techlist.Add(progress.Tech);
+        }
+        return techlist;
+    }
+
+    public async Task<HashSet<Technology>> GetCompanyResearchedTechsInField(Guid companyId, TechField field,
+        NpgsqlConnection? dbConnection = null)
+    {
+        await using var connection = await _db.ResolveDatabase(dbConnection);
+        var completedProgress = await connection.QueryAsync
+            <CompanyResearchProgressRaw, Company, Technology,CompanyResearchProgress>
+            (
+                "SELECT * FROM company_research_progress " +
+                "LEFT JOIN companies ON companies.id = company_research_progress.companyid " +
+                "LEFT JOIN technologies ON technologies.id = company_research_progress.techid " +
+                "WHERE companyid = @id AND completion >= 1 AND field = @techfield",
+                (progressData, company, tech) => new CompanyResearchProgress(
+                    company,
+                    tech,
+                    progressData.Completion
+                ), new
+                {
+                    id = companyId,
+                    techfield = field
+                }
+            );
+
+        var techlist = new HashSet<Technology>();
+        if (completedProgress == null)
+            return new HashSet<Technology>();
         foreach (var progress in completedProgress)
         {
             techlist.Add(progress.Tech);

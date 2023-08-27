@@ -8,3 +8,12 @@ public record Technology(
     TechField Field,
     int Cost);
 
+public record TechRequirementRaw(
+    Guid TechId,
+    Guid RequirementId
+    );
+
+public record TechRequirement(
+    Technology Tech,
+    Technology Requirement
+);

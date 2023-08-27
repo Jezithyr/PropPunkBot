@@ -119,4 +119,60 @@ public sealed class TechService
             new {id = techId, uses=uses, year = yearDeveloped, field = field, cost = cost});
         return true;
     }
+
+    public async Task<List<Technology>> GetTechRequirements(Guid techId, NpgsqlConnection? dbConnection = null)
+    {
+        await using var connection = await _db.ResolveDatabase(dbConnection);
+        var temp = await connection.QueryAsync<Technology>(
+            "SELECT * FROM technology_requirements " +
+            "LEFT JOIN technologies ON technologies.id = technology_requirements.techid " +
+            "LEFT JOIN technologies ON technologies.id = technology_requirements.requirementid " +
+            "WHERE techid = @id LIMIT 1",
+            new {id = techId}
+            );
+        return temp == null ? new List<Technology>() : temp.ToList();
+    }
+
+    public async Task<List<Technology>> GetTechsWithRequirement(Guid techId, NpgsqlConnection? dbConnection = null)
+    {
+        await using var connection = await _db.ResolveDatabase(dbConnection);
+        var technologies = await connection.QueryAsync<Technology>(
+            "SELECT * FROM technology_requirements " +
+            "LEFT JOIN technologies ON technologies.id = technology_requirements.techid " +
+            "LEFT JOIN technologies ON technologies.id = technology_requirements.requirementid " +
+            "WHERE requirementid = @id LIMIT 1",
+            new {id = techId}
+        );
+        return technologies == null ? new List<Technology>() : technologies.ToList();
+    }
+
+    public async Task<HashSet<Technology>> GetAllTechnologies( NpgsqlConnection? dbConnection = null)
+    {
+        await using var connection = await _db.ResolveDatabase(dbConnection);
+        var techs = await connection.QueryAsync<Technology>(
+            "SELECT * FROM technologies");
+        return techs == null ? new HashSet<Technology>() : techs.ToHashSet();
+    }
+
+    public async Task<HashSet<Technology>> GetAllTechnologiesFromField(TechField field,
+        NpgsqlConnection? dbConnection = null)
+    {
+        await using var connection = await _db.ResolveDatabase(dbConnection);
+        var techs = await connection.QueryAsync<Technology>(
+            "SELECT * FROM technologies WHERE field = @techfield",
+            new {techfield = field}
+            );
+        return techs == null ? new HashSet<Technology>() : techs.ToHashSet();
+    }
+
+    public async Task<HashSet<Technology>> GetAllTechnologiesFromUsage(TechnologyUse use,
+        NpgsqlConnection? dbConnection = null)
+    {
+        await using var connection = await _db.ResolveDatabase(dbConnection);
+        var techs = await connection.QueryAsync<Technology>(
+            "SELECT * FROM technologies WHERE uses = @techUse",
+            new {techUse = use}
+        );
+        return techs == null ? new HashSet<Technology>() : techs.ToHashSet();
+    }
 }

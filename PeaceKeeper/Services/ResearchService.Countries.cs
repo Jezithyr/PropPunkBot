@@ -1,12 +1,13 @@
 using Dapper;
 using Npgsql;
+using PeaceKeeper.Database;
 using PeaceKeeper.Database.Models;
 
 namespace PeaceKeeper.Services;
 
 public partial class ResearchService
 {
-    public async Task<List<Technology>> GetCountryResearchedTechs(Guid countryId,
+    public async Task<HashSet<Technology>> GetCountryResearchedTechs(Guid countryId,
         NpgsqlConnection? dbConnection = null)
     {
         await using var connection = await _db.ResolveDatabase(dbConnection);
@@ -29,9 +30,42 @@ public partial class ResearchService
             }
         );
 
-        var techlist = new List<Technology>();
+        var techlist = new HashSet<Technology>();
         if (completedProgress == null)
-            return new List<Technology>();
+            return new HashSet<Technology>();
+        foreach (var progress in completedProgress)
+        {
+            techlist.Add(progress.Tech);
+        }
+        return techlist;
+    }
+
+    public async Task<HashSet<Technology>> GetCountryResearchedTechsInField(Guid countryId, TechField field,
+        NpgsqlConnection? dbConnection = null)
+    {
+        await using var connection = await _db.ResolveDatabase(dbConnection);
+        var completedProgress = await connection.QueryAsync
+            <CountryResearchProgressRaw, Country, Technology,CountryResearchProgress>
+            (
+                "SELECT * FROM country_research_progress " +
+                "LEFT JOIN countries ON countries.id = country_research_progress.countryid " +
+                "LEFT JOIN technologies ON technologies.id = country_research_progress.techid " +
+                "WHERE countryid = @id AND completion >= 1 AND field = @techfield",
+                (progressData, country, tech) => new CountryResearchProgress(
+                    country,
+                    tech,
+                    progressData.Completion
+                ),
+                new
+                {
+                    id = countryId,
+                    techfield = field
+                }
+            );
+
+        var techlist = new HashSet<Technology>();
+        if (completedProgress == null)
+            return new HashSet<Technology>();
         foreach (var progress in completedProgress)
         {
             techlist.Add(progress.Tech);
@@ -186,4 +220,20 @@ public partial class ResearchService
         return overflow;
     }
 
+    public async Task<HashSet<Technology>> GetValidTechsForCountry(Guid countryId,
+        NpgsqlConnection? dbConnection = null)
+    {
+        await using var connection = await _db.ResolveDatabase(dbConnection);
+        HashSet<Technology> researchedTechs = await GetCountryResearchedTechs(countryId, connection);
+        return await GetValidTechs(researchedTechs, connection);
+
+    }
+
+    public async Task<HashSet<Technology>> GetValidTechsForCountry(Guid countryId, TechField techField,
+        NpgsqlConnection? dbConnection = null)
+    {
+        await using var connection = await _db.ResolveDatabase(dbConnection);
+        HashSet<Technology> researchedTechs = await GetCountryResearchedTechsInField(countryId, techField, connection);
+        return await GetValidTechs(researchedTechs, connection);
+    }
 }

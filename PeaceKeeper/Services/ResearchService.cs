@@ -37,5 +37,28 @@ public partial class ResearchService
         return (int)MathF.Ceiling(aotCost* tech.Cost);
     }
 
+    private async Task<HashSet<Technology>> GetValidTechs(HashSet<Technology> researchedTechs,
+        NpgsqlConnection connection)
+    {
+        HashSet<Technology> validTechs = new();
+        foreach (var validTech in researchedTechs)
+        {
+            foreach (var possibleTech in await _tech.GetTechsWithRequirement(validTech.Id, connection))
+            {
+                if (researchedTechs.Contains(possibleTech))
+                    continue;
+                var valid = true;
+                foreach (var possiblePre in await _tech.GetTechRequirements(possibleTech.Id, connection))
+                {
+                    if (researchedTechs.Contains(possiblePre))
+                        continue;
+                    valid = false;
+                }
+                if (!valid)
+                    validTechs.Add(possibleTech);
+            }
+        }
+        return validTechs;
+    }
 
 }

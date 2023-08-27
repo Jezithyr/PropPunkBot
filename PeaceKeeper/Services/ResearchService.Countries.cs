@@ -10,7 +10,7 @@ public partial class ResearchService
     public async Task<HashSet<Technology>> GetCountryResearchedTechs(Guid countryId,
         NpgsqlConnection? dbConnection = null)
     {
-        await using var connection = await _db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.ResolveDatabase(dbConnection);
         var completedProgress = await connection.QueryAsync
             <CountryResearchProgressRaw, Country, Technology,CountryResearchProgress>
         (
@@ -43,7 +43,7 @@ public partial class ResearchService
     public async Task<HashSet<Technology>> GetCountryResearchedTechsInField(Guid countryId, TechField field,
         NpgsqlConnection? dbConnection = null)
     {
-        await using var connection = await _db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.ResolveDatabase(dbConnection);
         var completedProgress = await connection.QueryAsync
             <CountryResearchProgressRaw, Country, Technology,CountryResearchProgress>
             (
@@ -75,7 +75,7 @@ public partial class ResearchService
 
     public async Task<decimal> GetCountryTechnologyProgress(Guid countryId, Guid techId, NpgsqlConnection? dbConnection = null)
     {
-        await using var connection = await _db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.ResolveDatabase(dbConnection);
         var completedProgress = await connection.QuerySingleOrDefaultAsync<CountryResearchProgressRaw>(
             "SELECT * FROM country_research_progress WHERE id = @id " +
             "AND techid = @tech",
@@ -89,7 +89,7 @@ public partial class ResearchService
     public async Task<Dictionary<int,CountryResearchSlot>?> GetCountryResearchSlots(Guid countryId,
         NpgsqlConnection? dbConnection = null)
     {
-        await using var connection = await _db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.ResolveDatabase(dbConnection);
         var researchQueues = await connection.QueryAsync
             <CountryResearchSlotRaw, Country, Technology,CountryResearchSlot>(
                 "SELECT * FROM country_research_slots " +
@@ -114,7 +114,7 @@ public partial class ResearchService
     public async Task<CountryResearchSlot?> GetCountryResearchSlot(Guid countryId, int slotNumber,
         NpgsqlConnection? dbConnection = null)
     {
-        await using var connection = await _db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.ResolveDatabase(dbConnection);
         var researchSlots = await connection.QueryAsync
             <CountryResearchSlotRaw, Country, Technology,CountryResearchSlot>(
             "SELECT * FROM country_research_slots " +
@@ -137,7 +137,7 @@ public partial class ResearchService
     public async Task<int> UpdateCountryTech(Guid countryId, Technology tech, int points,
         NpgsqlConnection? dbConnection = null)
     {
-        await using var connection = await _db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.ResolveDatabase(dbConnection);
         int overflow = points;
         var researchProgress = await connection.QuerySingleOrDefaultAsync<CountryResearchProgress>(
             "SELECT * FROM country_research_progress WHERE id = @id " +
@@ -164,7 +164,7 @@ public partial class ResearchService
     public async Task<bool> UpdateCountryResearch(Guid countryId, int researchPoints,
         NpgsqlConnection? dbConnection = null)
     {
-        await using var connection = await _db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.ResolveDatabase(dbConnection);
         var currentResearchSlots = await GetCountryResearchSlots(countryId, dbConnection);
         if (currentResearchSlots == null)
             return false;
@@ -223,7 +223,7 @@ public partial class ResearchService
     public async Task<HashSet<Technology>> GetValidTechsForCountry(Guid countryId,
         NpgsqlConnection? dbConnection = null)
     {
-        await using var connection = await _db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.ResolveDatabase(dbConnection);
         HashSet<Technology> researchedTechs = await GetCountryResearchedTechs(countryId, connection);
         return await GetValidTechs(researchedTechs, connection);
 
@@ -232,7 +232,7 @@ public partial class ResearchService
     public async Task<HashSet<Technology>> GetValidTechsForCountry(Guid countryId, TechField techField,
         NpgsqlConnection? dbConnection = null)
     {
-        await using var connection = await _db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.ResolveDatabase(dbConnection);
         HashSet<Technology> researchedTechs = await GetCountryResearchedTechsInField(countryId, techField, connection);
         return await GetValidTechs(researchedTechs, connection);
     }

@@ -8,19 +8,13 @@ namespace PeaceKeeper.Services;
 
 public class CountryService : PeacekeeperServiceBase
  {
-    private readonly DbService _db;
-    private readonly SettingsService _settings;
-    private readonly UserService _users;
-    public CountryService(DbService db, SettingsService settings, UserService users)
-    {
-        _db = db;
-        _settings = settings;
-        _users = users;
-    }
 
+     public CountryService(SettingsService settings, UserService users, DbService db) : base(settings, users, db)
+     {
+     }
     public async Task<Country?> GetCountry(Guid countryId, NpgsqlConnection? dbConnection = null)
     {
-        await using var connection = await _db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.ResolveDatabase(dbConnection);
         return await connection.QuerySingleOrDefaultAsync<Database.Models.Country>(
             "SELECT * FROM countries WHERE id = @id LIMIT 1",
             new {id = countryId});
@@ -28,7 +22,7 @@ public class CountryService : PeacekeeperServiceBase
 
     public async Task<Country?> GetCountry(string countryName, NpgsqlConnection? dbConnection = null)
     {
-        await using var connection = await _db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.ResolveDatabase(dbConnection);
         return await connection.QuerySingleOrDefaultAsync<Database.Models.Country>(
             "SELECT * FROM countries WHERE name = @name LIMIT 1",
             new {name = countryName});
@@ -36,7 +30,7 @@ public class CountryService : PeacekeeperServiceBase
 
     public async Task<Country?> GetCountryFromCode(string countryCode, NpgsqlConnection? dbConnection = null)
     {
-        await using var connection = await _db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.ResolveDatabase(dbConnection);
         return await connection.QuerySingleOrDefaultAsync<Database.Models.Country>(
             "SELECT * FROM countries WHERE shortname = @code LIMIT 1",
             new {code = countryCode});
@@ -45,9 +39,9 @@ public class CountryService : PeacekeeperServiceBase
     public async Task<bool> AssignUser(long userId, Guid countryId, bool makeOwner = true,
         NpgsqlConnection? dbConnection = null)
     {
-        await using var connection = await _db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.ResolveDatabase(dbConnection);
         var countryData = await GetCountry(countryId, dbConnection);
-        var userData = await _users.Get(userId, dbConnection);
+        var userData = await Users.Get(userId, dbConnection);
         if (countryData == null || userData == null) return false;
         if (makeOwner)
         {
@@ -70,7 +64,7 @@ public class CountryService : PeacekeeperServiceBase
     public async Task<bool> AssignUser(IUser user, string countryName, bool makeOwner = true,
         NpgsqlConnection? dbConnection = null)
     {
-        await using var connection = await _db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.ResolveDatabase(dbConnection);
         var countryData = await GetCountry(countryName, dbConnection);
         if (countryData == null) return false;
         return await AssignUser(user, countryData.Id, makeOwner, dbConnection);
@@ -79,7 +73,7 @@ public class CountryService : PeacekeeperServiceBase
     public async Task<bool> CreateCountry(string countryName, string countryCode, long? ownerId = null,
         NpgsqlConnection? dbConnection = null)
     {
-        await using var connection = await _db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.ResolveDatabase(dbConnection);
         if (countryName.Length > 128 || countryCode.Length > 4)
              return false;
         var country = await connection.QuerySingleOrDefaultAsync<Database.Models.Country>("SELECT * FROM countries WHERE name = @name LIMIT 1",
@@ -97,7 +91,7 @@ public class CountryService : PeacekeeperServiceBase
     }
     public async Task<bool> RemoveCountry(Guid countryId, NpgsqlConnection? dbConnection = null)
     {
-        await using var connection = await _db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.ResolveDatabase(dbConnection);
         var countryData = await dbConnection.QuerySingleOrDefaultAsync<Database.Models.Country>(
             "SELECT * FROM countries WHERE id = @id LIMIT 1",
             new {id = countryId});
@@ -109,7 +103,7 @@ public class CountryService : PeacekeeperServiceBase
 
     public async Task<bool> RemoveCountry(string countryName, NpgsqlConnection? dbConnection = null)
     {
-        await using var connection = await _db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.ResolveDatabase(dbConnection);
         var countryData = await dbConnection.QuerySingleOrDefaultAsync<Database.Models.Country>(
             "SELECT * FROM countries WHERE name = @name LIMIT 1",
             new {name = countryName});
@@ -119,4 +113,4 @@ public class CountryService : PeacekeeperServiceBase
         return true;
     }
 
-}
+ }

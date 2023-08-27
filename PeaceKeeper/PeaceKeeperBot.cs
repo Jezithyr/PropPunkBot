@@ -23,6 +23,7 @@ public sealed class PeaceKeeperBot
     {
         var services = new ServiceCollection();
         services.AddSingleton<DiscordSocketClient>();
+        services.AddSingleton<DbService>();
         AutoRegisterServices(ref services, typeof(PeacekeeperServiceBase));
         _services = services.BuildServiceProvider();
         Client = _services.GetRequiredService<DiscordSocketClient>();

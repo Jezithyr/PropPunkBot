@@ -7,15 +7,6 @@ namespace PeaceKeeper.Services;
 
 public sealed class TechService : PeacekeeperServiceBase
 {
-    private readonly DbService _db;
-    private readonly SettingsService _settings;
-    private readonly UserService _users;
-    public TechService(DbService db, SettingsService settings, UserService users)
-    {
-        _db = db;
-        _settings = settings;
-        _users = users;
-    }
     public async Task<bool> Create(string techName, TechnologyUse uses, int yearDeveloped, TechField field,
         int cost, NpgsqlConnection? dbConnection = null)
     {
@@ -23,7 +14,7 @@ public sealed class TechService : PeacekeeperServiceBase
         {
             return false;
         }
-        await using var connection = await _db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.ResolveDatabase(dbConnection);
         var tech = await connection.QuerySingleOrDefaultAsync<Technology>(
             "SELECT * FROM technologies WHERE name = @name LIMIT 1",
             new {name = techName});
@@ -41,7 +32,7 @@ public sealed class TechService : PeacekeeperServiceBase
         {
             return false;
         }
-        await using var connection = await _db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.ResolveDatabase(dbConnection);
         var tech = await connection.QuerySingleOrDefaultAsync<Technology>(
             "SELECT * FROM technologies WHERE name = @name LIMIT 1",
             new {name = techName});
@@ -58,7 +49,7 @@ public sealed class TechService : PeacekeeperServiceBase
         {
             return false;
         }
-        await using var connection = await _db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.ResolveDatabase(dbConnection);
         var tech = await connection.QuerySingleOrDefaultAsync<Technology>(
             "SELECT * FROM technologies WHERE name = @name LIMIT 1",
             new {name = techName});
@@ -71,7 +62,7 @@ public sealed class TechService : PeacekeeperServiceBase
         {
             return null;
         }
-        await using var connection = await _db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.ResolveDatabase(dbConnection);
         var tech = await connection.QuerySingleOrDefaultAsync<Technology>(
             "SELECT * FROM technologies WHERE name = @name LIMIT 1",
             new {name = techName});
@@ -85,7 +76,7 @@ public sealed class TechService : PeacekeeperServiceBase
         {
             return false;
         }
-        await using var connection = await _db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.ResolveDatabase(dbConnection);
         var tech = await connection.QuerySingleOrDefaultAsync<Technology>(
             "SELECT * FROM technologies WHERE name = @name LIMIT 1",
             new {name = techName});
@@ -104,7 +95,7 @@ public sealed class TechService : PeacekeeperServiceBase
     public async Task<bool> Update(Guid techId, TechnologyUse? uses, int? yearDeveloped, TechField? field,
         int? cost, NpgsqlConnection? dbConnection = null)
     {
-        await using var connection = await _db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.ResolveDatabase(dbConnection);
         var tech = await connection.QuerySingleOrDefaultAsync<Technology>(
             "SELECT * FROM technologies WHERE id = @id LIMIT 1",
             new {id = techId});
@@ -122,7 +113,7 @@ public sealed class TechService : PeacekeeperServiceBase
 
     public async Task<List<Technology>> GetRequirements(Guid techId, NpgsqlConnection? dbConnection = null)
     {
-        await using var connection = await _db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.ResolveDatabase(dbConnection);
         var temp = await connection.QueryAsync<Technology>(
             "SELECT * FROM technology_requirements " +
             "LEFT JOIN technologies ON technologies.id = technology_requirements.id " +
@@ -135,7 +126,7 @@ public sealed class TechService : PeacekeeperServiceBase
 
     public async Task<List<Technology>> GetWithRequirement(Guid techId, NpgsqlConnection? dbConnection = null)
     {
-        await using var connection = await _db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.ResolveDatabase(dbConnection);
         var technologies = await connection.QueryAsync<Technology>(
             "SELECT * FROM technology_requirements " +
             "LEFT JOIN technologies ON technologies.id = technology_requirements.id " +
@@ -148,7 +139,7 @@ public sealed class TechService : PeacekeeperServiceBase
 
     public async Task<HashSet<Technology>> GetAll( NpgsqlConnection? dbConnection = null)
     {
-        await using var connection = await _db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.ResolveDatabase(dbConnection);
         var techs = await connection.QueryAsync<Technology>(
             "SELECT * FROM technologies");
         return techs == null ? new HashSet<Technology>() : techs.ToHashSet();
@@ -157,7 +148,7 @@ public sealed class TechService : PeacekeeperServiceBase
     public async Task<HashSet<Technology>> GetAllFromField(TechField field,
         NpgsqlConnection? dbConnection = null)
     {
-        await using var connection = await _db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.ResolveDatabase(dbConnection);
         var techs = await connection.QueryAsync<Technology>(
             "SELECT * FROM technologies WHERE field = @techfield",
             new {techfield = field}
@@ -168,11 +159,15 @@ public sealed class TechService : PeacekeeperServiceBase
     public async Task<HashSet<Technology>> GetAllFromUsage(TechnologyUse use,
         NpgsqlConnection? dbConnection = null)
     {
-        await using var connection = await _db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.ResolveDatabase(dbConnection);
         var techs = await connection.QueryAsync<Technology>(
             "SELECT * FROM technologies WHERE uses = @techUse",
             new {techUse = use}
         );
         return techs == null ? new HashSet<Technology>() : techs.ToHashSet();
+    }
+
+    public TechService(SettingsService settings, UserService users, DbService db) : base(settings, users, db)
+    {
     }
 }

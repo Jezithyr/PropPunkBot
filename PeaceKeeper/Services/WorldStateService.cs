@@ -7,7 +7,6 @@ namespace PeaceKeeper.Services;
 
 public sealed class WorldStateService : PeacekeeperServiceBase
 {
-    private readonly DbService _db;
 
     public DateTime CurrentDate{ get; private set; }
 
@@ -16,17 +15,11 @@ public sealed class WorldStateService : PeacekeeperServiceBase
 
     public delegate void OnWorldTick(int year, int quarter, DateOnly date);
 
-
-    public WorldStateService(DbService db)
-    {
-        _db = db;
-    }
-
     public async Task<WorldState> GetWorldState(NpgsqlConnection? dbConnection = null)
     {
         if (dbConnection == null)
         {
-            await using var db = await _db.Get();
+            await using var db = await Db.Get();
             dbConnection = db;
         }
 
@@ -40,7 +33,7 @@ public sealed class WorldStateService : PeacekeeperServiceBase
     {
         if (dbConnection == null)
         {
-            await using var db = await _db.Get();
+            await using var db = await Db.Get();
             dbConnection = db;
         }
         var worldState = await dbConnection.QuerySingleAsync<WorldState>(
@@ -66,4 +59,7 @@ public sealed class WorldStateService : PeacekeeperServiceBase
             new {year = YearsSinceStart, quarter = CurrentQuarter});
     }
 
+    public WorldStateService(SettingsService settings, UserService users, DbService db) : base(settings, users, db)
+    {
+    }
 }

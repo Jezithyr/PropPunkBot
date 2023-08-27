@@ -8,15 +8,9 @@ namespace PeaceKeeper.Services;
 
 public sealed class UserService : PeacekeeperServiceBase
 {
-    private readonly DbService _db;
-
-    public UserService(DbService db)
-    {
-        _db = db;
-    }
     public async Task<bool> Exists(long userId, NpgsqlConnection? dbConnection = null)
     {
-        await using var connection = await _db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.ResolveDatabase(dbConnection);
         var users = await connection.QuerySingleOrDefaultAsync<UserRaw>(
             "SELECT * FROM users WHERE users.id = @id LIMIT 1",
             new {id = userId});
@@ -25,7 +19,7 @@ public sealed class UserService : PeacekeeperServiceBase
 
     public async Task<User?> Get(long userid, NpgsqlConnection? dbConnection = null)
     {
-        await using var connection = await _db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.ResolveDatabase(dbConnection);
         var users = await connection.QueryAsync<UserRaw, Country, CompanyRaw, UserRaw2>(
             "SELECT * FROM users LEFT JOIN countries ON countries.id = users.country " +
             "LEFT JOIN companies ON companies.id = users.company " +
@@ -67,7 +61,7 @@ public sealed class UserService : PeacekeeperServiceBase
 
     public async Task<bool> Remove(long userid, NpgsqlConnection? dbConnection = null)
     {
-         await using var connection = await _db.ResolveDatabase(dbConnection);
+         await using var connection = await Db.ResolveDatabase(dbConnection);
          var user = await Get(userid, dbConnection);
          if (user == null) return false;
          await connection.QueryAsync("DELETE FROM users where id = @id", new {id = userid});
@@ -81,7 +75,7 @@ public sealed class UserService : PeacekeeperServiceBase
 
     public async Task<bool> Add(long userid, NpgsqlConnection? dbConnection = null)
     {
-        await using var connection = await _db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.ResolveDatabase(dbConnection);
         var user = await Get(userid, dbConnection);
         if (user != null) return false;
 
@@ -96,4 +90,7 @@ public sealed class UserService : PeacekeeperServiceBase
         return await Add((long)user.Id, dbConnection);
     }
 
+    public UserService(SettingsService settings, UserService users, DbService db) : base(settings, users, db)
+    {
+    }
 }

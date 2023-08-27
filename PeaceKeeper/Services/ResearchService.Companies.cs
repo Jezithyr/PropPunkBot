@@ -32,9 +32,9 @@ public partial class ResearchService
             <CompanyResearchProgressRaw, Company, Technology,CompanyResearchProgress>
             (
                 "SELECT * FROM company_research_progress " +
-                "LEFT JOIN companies ON companies.id = company_research_progress.companyid " +
+                "LEFT JOIN companies ON companies.id = company_research_progress.id " +
                 "LEFT JOIN technologies ON technologies.id = company_research_progress.techid " +
-                "WHERE companyid = @id " +
+                "WHERE id = @id " +
                 "AND completion >= 1",
                 (progressData, company, tech) => new CompanyResearchProgress(
                     company,
@@ -64,9 +64,9 @@ public partial class ResearchService
             <CompanyResearchProgressRaw, Company, Technology,CompanyResearchProgress>
             (
                 "SELECT * FROM company_research_progress " +
-                "LEFT JOIN companies ON companies.id = company_research_progress.companyid " +
+                "LEFT JOIN companies ON companies.id = company_research_progress.id " +
                 "LEFT JOIN technologies ON technologies.id = company_research_progress.techid " +
-                "WHERE companyid = @id AND completion >= 1 AND field = @techfield",
+                "WHERE id = @id AND completion >= 1 AND field = @techfield",
                 (progressData, company, tech) => new CompanyResearchProgress(
                     company,
                     tech,
@@ -92,7 +92,7 @@ public partial class ResearchService
     {
         await using var connection = await _db.ResolveDatabase(dbConnection);
         var completedProgress = await connection.QuerySingleOrDefaultAsync<CompanyResearchProgressRaw>(
-            "SELECT * FROM company_research_progress WHERE companyid = @id " +
+            "SELECT * FROM company_research_progress WHERE id = @id " +
             "AND techid = @tech",
             new {id = companyId, tech = techId}
         );
@@ -108,9 +108,9 @@ public partial class ResearchService
         var researchQueues = await connection.QueryAsync
             <CompanyResearchSlotRaw, Company, Technology,CompanyResearchSlot>(
                 "SELECT * FROM company_research_slots " +
-                "LEFT JOIN companies ON companies.id = company_research_slots.companyid " +
+                "LEFT JOIN companies ON companies.id = company_research_slots.id " +
                 "LEFT JOIN technologies ON technologies.id = company_research_slots.techid " +
-                "WHERE company_research_slots.companyid = @id",
+                "WHERE company_research_slots.id = @id",
                 (researchData, company, techid) => new CompanyResearchSlot(
                     company,
                     researchData.SlotNumber,
@@ -133,9 +133,9 @@ public partial class ResearchService
         var researchSlots = await connection.QueryAsync
             <CompanyResearchSlotRaw, Company, Technology,CompanyResearchSlot>(
             "SELECT * FROM company_research_slots " +
-                "LEFT JOIN companies ON companies.id = company_research_slots.companyid " +
+                "LEFT JOIN companies ON companies.id = company_research_slots.id " +
                 "LEFT JOIN technologies ON technologies.id = company_research_slots.techid " +
-                "WHERE company_research_slots.companyid = @id " +
+                "WHERE company_research_slots.id = @id " +
                 "AND company_research_slots.slotnumber = @slotnumber",
                 (researchData, company, techid) => new CompanyResearchSlot(
                     company,
@@ -155,7 +155,7 @@ public partial class ResearchService
         await using var connection = await _db.ResolveDatabase(dbConnection);
         int overflow = points;
         var researchProgress = await connection.QuerySingleOrDefaultAsync<CompanyResearchProgress>(
-            "SELECT * FROM company_research_progress WHERE companyid = @id " +
+            "SELECT * FROM company_research_progress WHERE id = @id " +
             "AND techid = @techId",
             new {id = companyId, techid = tech.Id}
         );
@@ -170,7 +170,7 @@ public partial class ResearchService
         }
         await connection.QueryAsync(
             "UPDATE company_research_progress SET  completion = @percentage " +
-            "WHERE companyid = @id AND techid = @techid",
+            "WHERE id = @id AND techid = @techid",
             new { id = companyId, techid = tech.Id, percentage = completion}
         );
         return overflow;
@@ -215,7 +215,7 @@ public partial class ResearchService
     {
         await connection.QueryAsync(
             "UPDATE company_research_meta SET pointoverflow = @newoverflow " +
-            "WHERE companyid = @id",
+            "WHERE id = @id",
             new{id = companyId, newoverflow = overflow}
         );
     }
@@ -223,13 +223,13 @@ public partial class ResearchService
     private async Task<int> GetAndClearCompanyOverflow(Guid companyId, NpgsqlConnection connection)
     {
         var metadata = await connection.QuerySingleOrDefaultAsync<CompanyResearchMetaData>(
-            "SELECT * FROM company_research_meta WHERE companyId = @id ",
+            "SELECT * FROM company_research_meta WHERE id = @id ",
             new{id = companyId}
             );
         var overflow = metadata.PointOverflow;
         await connection.QueryAsync(
             "UPDATE company_research_meta SET pointoverflow = 0 " +
-            "WHERE companyId = @id",
+            "WHERE id = @id",
             new{id = companyId}
         );
         return overflow;

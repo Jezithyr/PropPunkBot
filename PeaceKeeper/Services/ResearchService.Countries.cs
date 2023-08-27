@@ -15,9 +15,9 @@ public partial class ResearchService
             <CountryResearchProgressRaw, Country, Technology,CountryResearchProgress>
         (
             "SELECT * FROM country_research_progress " +
-            "LEFT JOIN countries ON countries.id = country_research_progress.countryid " +
+            "LEFT JOIN countries ON countries.id = country_research_progress.id " +
             "LEFT JOIN technologies ON technologies.id = country_research_progress.techid " +
-            "WHERE countryid = @id " +
+            "WHERE id = @id " +
             "AND completion >= 1",
             (progressData, country, tech) => new CountryResearchProgress(
                 country,
@@ -48,9 +48,9 @@ public partial class ResearchService
             <CountryResearchProgressRaw, Country, Technology,CountryResearchProgress>
             (
                 "SELECT * FROM country_research_progress " +
-                "LEFT JOIN countries ON countries.id = country_research_progress.countryid " +
+                "LEFT JOIN countries ON countries.id = country_research_progress.id " +
                 "LEFT JOIN technologies ON technologies.id = country_research_progress.techid " +
-                "WHERE countryid = @id AND completion >= 1 AND field = @techfield",
+                "WHERE id = @id AND completion >= 1 AND field = @techfield",
                 (progressData, country, tech) => new CountryResearchProgress(
                     country,
                     tech,
@@ -77,7 +77,7 @@ public partial class ResearchService
     {
         await using var connection = await _db.ResolveDatabase(dbConnection);
         var completedProgress = await connection.QuerySingleOrDefaultAsync<CountryResearchProgressRaw>(
-            "SELECT * FROM country_research_progress WHERE countryid = @id " +
+            "SELECT * FROM country_research_progress WHERE id = @id " +
             "AND techid = @tech",
             new {id = countryId, tech = techId}
         );
@@ -93,9 +93,9 @@ public partial class ResearchService
         var researchQueues = await connection.QueryAsync
             <CountryResearchSlotRaw, Country, Technology,CountryResearchSlot>(
                 "SELECT * FROM country_research_slots " +
-                "LEFT JOIN countries ON countries.id = country_research_slots.countryid " +
+                "LEFT JOIN countries ON countries.id = country_research_slots.id " +
                 "LEFT JOIN technologies ON technologies.id = country_research_slots.techid " +
-                "WHERE country_research_slots.countryid = @id",
+                "WHERE country_research_slots.id = @id",
                 (researchData, countryid, techid) => new CountryResearchSlot(
                     countryid,
                     researchData.SlotNumber,
@@ -118,9 +118,9 @@ public partial class ResearchService
         var researchSlots = await connection.QueryAsync
             <CountryResearchSlotRaw, Country, Technology,CountryResearchSlot>(
             "SELECT * FROM country_research_slots " +
-                "LEFT JOIN countries ON countries.id = country_research_slots.countryid " +
+                "LEFT JOIN countries ON countries.id = country_research_slots.id " +
                 "LEFT JOIN technologies ON technologies.id = country_research_slots.techid " +
-                "WHERE country_research_slots.countryid = @id " +
+                "WHERE country_research_slots.id = @id " +
                 "AND country_research_slots.slotnumber = @slotnumber",
                 (researchData, country, techid) => new CountryResearchSlot(
                     country,
@@ -140,7 +140,7 @@ public partial class ResearchService
         await using var connection = await _db.ResolveDatabase(dbConnection);
         int overflow = points;
         var researchProgress = await connection.QuerySingleOrDefaultAsync<CountryResearchProgress>(
-            "SELECT * FROM country_research_progress WHERE countryid = @id " +
+            "SELECT * FROM country_research_progress WHERE id = @id " +
             "AND techid = @techId",
             new {id = countryId, techid = tech.Id}
         );
@@ -155,7 +155,7 @@ public partial class ResearchService
         }
         await connection.QueryAsync(
             "UPDATE country_research_progress SET  completion = @percentage " +
-            "WHERE countryid = @id AND techid = @techid",
+            "WHERE id = @id AND techid = @techid",
             new { id = countryId, techid = tech.Id, percentage = completion}
         );
         return overflow;
@@ -200,7 +200,7 @@ public partial class ResearchService
     {
         await connection.QueryAsync(
             "UPDATE country_research_meta SET pointoverflow = @newoverflow " +
-            "WHERE countryid = @id",
+            "WHERE id = @id",
             new{id = countryId, newoverflow = overflow}
         );
     }
@@ -208,13 +208,13 @@ public partial class ResearchService
     private async Task<int> GetAndClearCountryOverflow(Guid countryId, NpgsqlConnection connection)
     {
         var metadata = await connection.QuerySingleOrDefaultAsync<CountryResearchMetaData>(
-            "SELECT * FROM country_research_meta WHERE countryid = @id ",
+            "SELECT * FROM country_research_meta WHERE id = @id ",
             new{id = countryId}
             );
         var overflow = metadata.PointOverflow;
         await connection.QueryAsync(
             "UPDATE country_research_meta SET pointoverflow = 0 " +
-            "WHERE countryid = @id",
+            "WHERE id = @id",
             new{id = countryId}
         );
         return overflow;

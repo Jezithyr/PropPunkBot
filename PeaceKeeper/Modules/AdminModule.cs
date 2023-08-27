@@ -1,38 +1,71 @@
-using Dapper;
 using Discord;
 using Discord.Interactions;
-using PeaceKeeper.Database;
 using PeaceKeeper.Database.Models;
+using PeaceKeeper.Services;
 
 namespace PeaceKeeper.Modules;
 
 [Group("admin", "moderation actions for prop-punk")]
-public partial class AdminModule : InteractionModuleBase
+public partial class AdminModule : PeacekeeperInteractionModule
 {
-    private readonly DbService _db;
+    private readonly CountryService _country;
+    private readonly CompanyService _company;
+    private readonly TechService _tech;
 
-    public AdminModule(DbService db)
+    public AdminModule(UserService user, PermissionsService perms, SettingsService settings,CountryService country,
+        CompanyService company, TechService tech) : base(user, perms, settings)
     {
-        _db = db;
+        _country = country;
+        _company = company;
+        _tech = tech;
     }
 
     [SlashCommand("removeuser", "remove a user from the prop-punk universe")]
     public async Task Remove(IUser user)
     {
         await DeferAsync();
-
-        await using var connection = await _db.Get();
-
-        var userdata = await connection.QuerySingleOrDefaultAsync<UserRaw>("SELECT * FROM users WHERE id = @id LIMIT 1",
-            new {id = (long) user.Id});
-        if (userdata == null)
+        var caller = Context.User;
+        if (caller == null)
         {
-            await FollowupAsync($"User {user.Username} was not found!");
+            await FollowupAsync($"Cannot run this command without a user");
+            return;
         }
-        else
+        if (await Perms.UserHasPermission((long) caller.Id, GlobalPermissionLevel.UserManagement))
         {
-            await connection.QueryAsync("DELETE FROM users where id = @id", new {id = (long) user.Id});
+            await FollowupAsync($"You do not have the permissions to run this command");
+            return;
+        }
+
+        if (await User.Remove((long) user.Id))
+        {
             await FollowupAsync($"Removed user: {user.Username}");
+            return;
         }
+        await FollowupAsync($"User {user.Username} was not found!");
+    }
+
+    [SlashCommand("adduser", "remove a user from the prop-punk universe")]
+    public async Task Add(IUser user)
+    {
+        await DeferAsync();
+        var caller = Context.User;
+        if (caller == null)
+        {
+            await FollowupAsync($"Cannot run this command without a user");
+            return;
+        }
+
+        if (await Perms.UserHasPermission((long) user.Id, GlobalPermissionLevel.UserManagement))
+        {
+            await FollowupAsync($"You do not have the permissions to run this command");
+            return;
+        }
+
+        if (await User.Add((long) user.Id))
+        {
+            await FollowupAsync($"Added user: {user.Username}");
+            return;
+        }
+        await FollowupAsync($"User {user.Username} could not be added! They may be already present!");
     }
 }

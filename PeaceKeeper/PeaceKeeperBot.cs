@@ -19,17 +19,13 @@ public sealed class PeaceKeeperBot
     public DiscordSocketClient Client { get; init; }
     public InteractionService InteractionService { get; init; }
     private readonly IServiceProvider _services;
-
     private PeaceKeeperBot()
     {
         var services = new ServiceCollection();
-        services.AddSingleton<SettingsService>();
         services.AddSingleton<DiscordSocketClient>();
-        services.AddSingleton<DbService>();
+        AutoRegisterServices(ref services, typeof(PeacekeeperServiceBase));
         _services = services.BuildServiceProvider();
-
         Client = _services.GetRequiredService<DiscordSocketClient>();
-
         Commands = 
             new CommandHandler(Client, new CommandService(), _services);
         InteractionService = new InteractionService(Client.Rest);
@@ -40,6 +36,17 @@ public sealed class PeaceKeeperBot
         var inst = new PeaceKeeperBot();
         await inst.Initialize();
         return inst;
+    }
+
+    private void AutoRegisterServices(ref ServiceCollection services, Type serviceBaseClass)
+    {
+        foreach (var type in typeof(PeaceKeeperBot).Assembly.GetTypes())
+        {
+            if (type.IsAssignableTo(serviceBaseClass) && !type.IsAbstract)
+            {
+                services.AddSingleton(type);
+            }
+        }
     }
 
     private async Task Initialize()

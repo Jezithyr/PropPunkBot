@@ -3,42 +3,33 @@ using Discord;
 using Discord.Interactions;
 using PeaceKeeper.Database;
 using PeaceKeeper.Database.Models;
+using PeaceKeeper.Services;
 
 namespace PeaceKeeper.Modules;
 
 [Group("user", "user related commands")]
-public sealed class UserModule : InteractionModuleBase
+public sealed class UserModule : PeacekeeperInteractionModule
 {
-    private readonly DbService _db;
 
-    public UserModule(DbService db)
+    public UserModule(UserService user, PermissionsService perms, SettingsService settings) : base(user, perms, settings)
     {
-        _db = db;
     }
 
-    [UserCommand("getinfo")]
+
+    [UserCommand("Get Info")]
     public async Task GetInfo(IUser user)
     {
         await DeferAsync();
-        await using var db = await _db.Get();
-        var users = await db.QueryAsync<UserRaw, Country, Company, User>(
-            "SELECT * FROM users LEFT JOIN countries ON countries.id = users.country LEFT JOIN companies ON companies.id = users.company WHERE users.id = @id",
-            (userData, countryData, companyData) => new User(
-                userData.Id,
-                countryData,
-                userData.Leader,
-                companyData,
-                userData.Ceo
-            ), new {id = (long) user.Id});
-        if (users.SingleOrDefault() is not { } userData)
+
+        var userData = await User.Get(user);
+        if (userData == null)
         {
-            await FollowupAsync("User not found");
+            await RespondAsync($"User {user.Username} is not registered!");
             return;
         }
 
         var embed = new EmbedBuilder();
         embed.WithAuthor(user.GlobalName, user.GetAvatarUrl());
-
         var country = $"Country ({(userData.Leader ? "Leader" : "Member")})";
         var company = $"Company ({(userData.Ceo ? "CEO" : "Member")})";
         embed.AddField(country, userData.Country?.Name ?? "None", true);
@@ -51,38 +42,27 @@ public sealed class UserModule : InteractionModuleBase
     public async Task Register()
     {
         await DeferAsync();
-        await using var connection = await _db.Get();
-
-        var user = await connection.QuerySingleOrDefaultAsync<UserRaw>("SELECT * FROM users WHERE id = @id LIMIT 1",
-            new {id = (long) Context.User.Id});
-        if (user == null)
+        if (await User.Add((long)Context.User.Id))
         {
-            await connection.QuerySingleAsync<long>(
-                "INSERT INTO users(id) VALUES(@id) ON CONFLICT DO NOTHING RETURNING -1",
-                new {id = (long) Context.User.Id});
-            await FollowupAsync("Registered new user");
+            await FollowupAsync("Registered you for the prop-punk universe!");
         }
         else
         {
-            await FollowupAsync("User already registered");
+            await FollowupAsync("You are already registered!");
         }
     }
     [SlashCommand("unregister", "unregister from the prop-punk universe")]
     public async Task UnRegister()
     {
         await DeferAsync();
-        await using var connection = await _db.Get();
-
-        var userdata = await connection.QuerySingleOrDefaultAsync<UserRaw>("SELECT * FROM users WHERE id = @id LIMIT 1",
-            new {id = (long) Context.User.Id});
-        if (userdata == null)
+        if (await User.Remove((long)Context.User.Id))
         {
-            await FollowupAsync($"You are not registered!");
+            await FollowupAsync("Removed you from the prop-punk universe!");
         }
         else
         {
-            await connection.QueryAsync("DELETE FROM users where id = @id", new {id = (long) Context.User.Id});
-            await FollowupAsync($"Removed you from the prop-punk universe.");
+            await FollowupAsync("You are not registered already!");
         }
     }
+
 }

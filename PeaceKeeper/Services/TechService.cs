@@ -5,7 +5,7 @@ using PeaceKeeper.Database.Models;
 
 namespace PeaceKeeper.Services;
 
-public sealed class TechService
+public sealed class TechService : PeacekeeperServiceBase
 {
     private readonly DbService _db;
     private readonly SettingsService _settings;
@@ -16,7 +16,7 @@ public sealed class TechService
         _settings = settings;
         _users = users;
     }
-    public async Task<bool> CreateTechnology(string techName, TechnologyUse uses, int yearDeveloped, TechField field,
+    public async Task<bool> Create(string techName, TechnologyUse uses, int yearDeveloped, TechField field,
         int cost, NpgsqlConnection? dbConnection = null)
     {
         if (techName.Length > 128)
@@ -35,7 +35,7 @@ public sealed class TechService
         return true;
     }
 
-    public async Task<bool> RemoveTech(string techName, NpgsqlConnection? dbConnection = null)
+    public async Task<bool> Remove(string techName, NpgsqlConnection? dbConnection = null)
     {
         if (techName.Length > 128)
         {
@@ -52,7 +52,7 @@ public sealed class TechService
 
     }
 
-    public async Task<bool> TechnologyExists(string techName, NpgsqlConnection? dbConnection = null)
+    public async Task<bool> Exists(string techName, NpgsqlConnection? dbConnection = null)
     {
         if (techName.Length > 128)
         {
@@ -65,7 +65,7 @@ public sealed class TechService
         return tech != null;
     }
 
-    public async Task<Guid?> GetTechId(string techName, NpgsqlConnection? dbConnection = null)
+    public async Task<Guid?> GetId(string techName, NpgsqlConnection? dbConnection = null)
     {
         if (techName.Length > 128)
         {
@@ -78,7 +78,7 @@ public sealed class TechService
         return tech?.Id;
     }
 
-    public async Task<bool> UpdateTech(string techName, TechnologyUse? uses, int? yearDeveloped, TechField? field,
+    public async Task<bool> Update(string techName, TechnologyUse? uses, int? yearDeveloped, TechField? field,
         int? cost, NpgsqlConnection? dbConnection = null)
     {
         if (techName.Length > 128)
@@ -101,7 +101,7 @@ public sealed class TechService
         return true;
     }
 
-    public async Task<bool> UpdateTech(Guid techId, TechnologyUse? uses, int? yearDeveloped, TechField? field,
+    public async Task<bool> Update(Guid techId, TechnologyUse? uses, int? yearDeveloped, TechField? field,
         int? cost, NpgsqlConnection? dbConnection = null)
     {
         await using var connection = await _db.ResolveDatabase(dbConnection);
@@ -120,25 +120,25 @@ public sealed class TechService
         return true;
     }
 
-    public async Task<List<Technology>> GetTechRequirements(Guid techId, NpgsqlConnection? dbConnection = null)
+    public async Task<List<Technology>> GetRequirements(Guid techId, NpgsqlConnection? dbConnection = null)
     {
         await using var connection = await _db.ResolveDatabase(dbConnection);
         var temp = await connection.QueryAsync<Technology>(
             "SELECT * FROM technology_requirements " +
-            "LEFT JOIN technologies ON technologies.id = technology_requirements.techid " +
+            "LEFT JOIN technologies ON technologies.id = technology_requirements.id " +
             "LEFT JOIN technologies ON technologies.id = technology_requirements.requirementid " +
-            "WHERE techid = @id LIMIT 1",
+            "WHERE id = @id LIMIT 1",
             new {id = techId}
             );
         return temp == null ? new List<Technology>() : temp.ToList();
     }
 
-    public async Task<List<Technology>> GetTechsWithRequirement(Guid techId, NpgsqlConnection? dbConnection = null)
+    public async Task<List<Technology>> GetWithRequirement(Guid techId, NpgsqlConnection? dbConnection = null)
     {
         await using var connection = await _db.ResolveDatabase(dbConnection);
         var technologies = await connection.QueryAsync<Technology>(
             "SELECT * FROM technology_requirements " +
-            "LEFT JOIN technologies ON technologies.id = technology_requirements.techid " +
+            "LEFT JOIN technologies ON technologies.id = technology_requirements.id " +
             "LEFT JOIN technologies ON technologies.id = technology_requirements.requirementid " +
             "WHERE requirementid = @id LIMIT 1",
             new {id = techId}
@@ -146,7 +146,7 @@ public sealed class TechService
         return technologies == null ? new List<Technology>() : technologies.ToList();
     }
 
-    public async Task<HashSet<Technology>> GetAllTechnologies( NpgsqlConnection? dbConnection = null)
+    public async Task<HashSet<Technology>> GetAll( NpgsqlConnection? dbConnection = null)
     {
         await using var connection = await _db.ResolveDatabase(dbConnection);
         var techs = await connection.QueryAsync<Technology>(
@@ -154,7 +154,7 @@ public sealed class TechService
         return techs == null ? new HashSet<Technology>() : techs.ToHashSet();
     }
 
-    public async Task<HashSet<Technology>> GetAllTechnologiesFromField(TechField field,
+    public async Task<HashSet<Technology>> GetAllFromField(TechField field,
         NpgsqlConnection? dbConnection = null)
     {
         await using var connection = await _db.ResolveDatabase(dbConnection);
@@ -165,7 +165,7 @@ public sealed class TechService
         return techs == null ? new HashSet<Technology>() : techs.ToHashSet();
     }
 
-    public async Task<HashSet<Technology>> GetAllTechnologiesFromUsage(TechnologyUse use,
+    public async Task<HashSet<Technology>> GetAllFromUsage(TechnologyUse use,
         NpgsqlConnection? dbConnection = null)
     {
         await using var connection = await _db.ResolveDatabase(dbConnection);

@@ -1,8 +1,9 @@
 using Npgsql;
+using PeaceKeeper.Services;
 
 namespace PeaceKeeper.Database;
 
-public sealed class DbService
+public sealed class DbService : PeacekeeperServiceBase
 {
     private readonly NpgsqlDataSource _source;
 

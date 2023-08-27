@@ -5,7 +5,7 @@ using PeaceKeeper.Database.Models;
 
 namespace PeaceKeeper.Services;
 
-public partial class ResearchService
+public partial class ResearchService : PeacekeeperServiceBase
 {
     private readonly DbService _db;
     private readonly SettingsService _settings;
@@ -43,12 +43,12 @@ public partial class ResearchService
         HashSet<Technology> validTechs = new();
         foreach (var validTech in researchedTechs)
         {
-            foreach (var possibleTech in await _tech.GetTechsWithRequirement(validTech.Id, connection))
+            foreach (var possibleTech in await _tech.GetWithRequirement(validTech.Id, connection))
             {
                 if (researchedTechs.Contains(possibleTech))
                     continue;
                 var valid = true;
-                foreach (var possiblePre in await _tech.GetTechRequirements(possibleTech.Id, connection))
+                foreach (var possiblePre in await _tech.GetRequirements(possibleTech.Id, connection))
                 {
                     if (researchedTechs.Contains(possiblePre))
                         continue;

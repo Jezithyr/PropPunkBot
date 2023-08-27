@@ -6,8 +6,8 @@ using PeaceKeeper.Database.Models;
 
 namespace PeaceKeeper.Services;
 
-public partial class CountryService
-{
+public class CountryService : PeacekeeperServiceBase
+ {
     private readonly DbService _db;
     private readonly SettingsService _settings;
     private readonly UserService _users;
@@ -47,7 +47,7 @@ public partial class CountryService
     {
         await using var connection = await _db.ResolveDatabase(dbConnection);
         var countryData = await GetCountry(countryId, dbConnection);
-        var userData = await _users.GetUser(userId, dbConnection);
+        var userData = await _users.Get(userId, dbConnection);
         if (countryData == null || userData == null) return false;
         if (makeOwner)
         {
@@ -95,21 +95,6 @@ public partial class CountryService
         }
         return true;
     }
-
-    public async Task<bool> RemoveCountry(string countryName, NpgsqlConnection? dbConnection = null)
-    {
-        await using var connection = await _db.ResolveDatabase(dbConnection);
-        if (countryName.Length > 128)
-            return false;
-        var countryData = await dbConnection.QuerySingleOrDefaultAsync<Database.Models.Country>(
-            "SELECT * FROM countries WHERE name = @name LIMIT 1",
-            new {name = countryName});
-        if (countryData == null)
-            return false;
-        await connection.QueryAsync("DELETE FROM countries where name = @name", new {name = countryName});
-        return true;
-    }
-
     public async Task<bool> RemoveCountry(Guid countryId, NpgsqlConnection? dbConnection = null)
     {
         await using var connection = await _db.ResolveDatabase(dbConnection);
@@ -119,6 +104,18 @@ public partial class CountryService
         if (countryData == null)
             return false;
         await connection.QueryAsync("DELETE FROM countries where id = @id", new {id = countryId});
+        return true;
+    }
+
+    public async Task<bool> RemoveCountry(string countryName, NpgsqlConnection? dbConnection = null)
+    {
+        await using var connection = await _db.ResolveDatabase(dbConnection);
+        var countryData = await dbConnection.QuerySingleOrDefaultAsync<Database.Models.Country>(
+            "SELECT * FROM countries WHERE name = @name LIMIT 1",
+            new {name = countryName});
+        if (countryData == null)
+            return false;
+        await connection.QueryAsync("DELETE FROM countries where name = @name", new {name = countryName});
         return true;
     }
 

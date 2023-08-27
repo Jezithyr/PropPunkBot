@@ -16,22 +16,13 @@ public partial class AdminModule
             await FollowupAsync("Technology name is too long, must be less than 128 characters!");
             return;
         }
-        await using var connection = await _db.Get();
-        var tech = await connection.QuerySingleOrDefaultAsync<Technology>(
-            "SELECT * FROM technologies WHERE name = @name LIMIT 1",
-            new {name = techName});
-        if (tech == null)
+
+        if (await _tech.Create(techName, uses, yearDeveloped, field, cost))
         {
-            await connection.QuerySingleAsync<long>(
-                "INSERT INTO technologies (name, uses, year, field, cost) VALUES (@name, @uses, @year, @field, @cost) ON CONFLICT DO NOTHING RETURNING -1",
-                new {name = techName, uses = uses, year = yearDeveloped, field = field, cost = cost});
-            await FollowupAsync($"Registered new tech: {techName} | Uses: {uses} | Field: {field} | Year: {yearDeveloped} raw cost: {cost}");
+            await FollowupAsync($"Technology {techName} Created!");
+            return;
         }
-        else
-        {
-            await FollowupAsync($"Tech with name: {techName} already exists!");
-        }
-        
+        await FollowupAsync($"Technology {techName} Already Exists!");
     }
     [SlashCommand("removetech", "remove a technology")]
     public async Task RemoveTech(string techName)
@@ -42,19 +33,11 @@ public partial class AdminModule
             await FollowupAsync("Technology name is too long, must be less than 128 characters!");
             return;
         }
-        
-        await using var connection = await _db.Get();
-        var tech = await connection.QuerySingleOrDefaultAsync<Technology>(
-            "SELECT * FROM technologies WHERE name = @name LIMIT 1",
-            new {name = techName});
-        if (tech == null)
+        if (await _tech.Remove(techName))
         {
-            await FollowupAsync($"Tech {techName} was not found!");
+            await FollowupAsync($"Technology {techName} Removed!");
+            return;
         }
-        else
-        {
-            await connection.QueryAsync("DELETE FROM technologies where name = @name", new {name =techName});
-            await FollowupAsync($"Removed Tech: {techName}");
-        }
+        await FollowupAsync($"Technology {techName} Does not Exist!");
     }
 }

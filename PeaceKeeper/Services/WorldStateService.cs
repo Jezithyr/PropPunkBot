@@ -5,7 +5,7 @@ using PeaceKeeper.Database.Models;
 
 namespace PeaceKeeper.Services;
 
-public sealed class WorldStateService
+public sealed class WorldStateService : PeacekeeperServiceBase
 {
     private readonly DbService _db;
 

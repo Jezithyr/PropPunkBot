@@ -6,7 +6,7 @@ using PeaceKeeper.Database.Models;
 
 namespace PeaceKeeper.Services;
 
-public sealed class SettingsService
+public sealed class SettingsService : PeacekeeperServiceBase
 {
     private readonly DbService _db;
 

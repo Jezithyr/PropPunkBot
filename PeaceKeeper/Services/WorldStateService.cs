@@ -22,15 +22,17 @@ public sealed class WorldStateService
         _db = db;
     }
 
-    public async Task<WorldState?> GetWorldState(NpgsqlConnection? dbConnection = null)
+    public async Task<WorldState> GetWorldState(NpgsqlConnection? dbConnection = null)
     {
         if (dbConnection == null)
         {
             await using var db = await _db.Get();
             dbConnection = db;
         }
-        return await dbConnection.QuerySingleAsync<WorldState>(
+
+        var state = await dbConnection.QuerySingleAsync<WorldStateRaw>(
             "SELECT * FROM world_state WHERE lock = 0 LIMIT 1");
+        return new WorldState(DateTime.Parse(state.StartDate), state.Year, state.Quarter);
     }
 
 

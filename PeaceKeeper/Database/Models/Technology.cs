@@ -7,3 +7,4 @@ public record Technology(
     int Year,
     TechField Field,
     int Cost);
+

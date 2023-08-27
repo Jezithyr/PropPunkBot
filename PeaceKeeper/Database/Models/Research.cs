@@ -1,29 +1,18 @@
 namespace PeaceKeeper.Database.Models;
 
-public record CountryResearch(
-    Country Country,
-    int SlotNumber,
-    Technology? Tech,
-    int Points
-    );
+public record CountryResearchSlot( Country Country, int SlotNumber, Technology? Tech);
 
-public record CountryResearchRaw(
-    Guid CountryId,
-    int SlotNumber,
-    Guid? TechId,
-    int Points
-);
+public record CountryResearchSlotRaw(Guid CountryId, int SlotNumber, Guid? TechId);
 
-public record CompanyResearch(
-    Company Company,
-    int SlotNumber,
-    Technology? TechId,
-    int Points
-);
+public record CountryResearchProgress(Guid CountryId, Guid TechId, decimal Completion);
 
-public record CompanyResearchRaw(
-    Guid CompanyId,
-    int SlotNumber,
-    Guid? Tech,
-    int Points
-);
+public record CountryResearchMetaData(Guid CountryId, int PointOverflow);
+
+public record CompanyResearchSlot(Company Company, int SlotNumber, Technology? Tech);
+
+public record CompanyResearchSlotRaw(Guid CompanyId, int SlotNumber, Guid? Tech);
+
+public record CompanyResearchMetaData(Guid CompanyId, int PointOverflow);
+
+public record CompanyResearchProgress(Guid CompanyId, Guid TechId, decimal Completion);
+

@@ -1,8 +1,13 @@
 namespace PeaceKeeper.Database.Models;
 
-public record WorldState(
+public record WorldStateRaw(
     int Lock,
     string StartDate,
     int Year,
     int Quarter
     );
+public record WorldState(
+    DateTime StartDate,
+    int Year,
+    int Quarter
+);

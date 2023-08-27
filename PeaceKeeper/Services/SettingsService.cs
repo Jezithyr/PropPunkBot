@@ -15,9 +15,20 @@ public sealed class SettingsService
         _db = db;
     }
 
-    public async Task<Settings?> GetSettings(ulong guild, NpgsqlConnection? dbConnection = null)
+    public async Task<ServerSettings?> GetServerSettings(ulong guild, NpgsqlConnection? dbConnection = null)
     {
         await using var connection = await _db.ResolveDatabase(dbConnection);
-        return await connection.QuerySingleOrDefaultAsync<Settings>("SELECT * FROM settings WHERE guild = @guild", new { guild = (long) guild });
+        return await connection.QuerySingleOrDefaultAsync<ServerSettings>("SELECT * FROM server_settings WHERE guild = @guild", new { guild = (long) guild });
+    }
+
+    //get the global settings for the bot, NOTE: this shifts research slots to array notation for easier programming
+    public async Task<GlobalSettings> GetSettings()
+    {
+        await using var connection = await _db.Get();
+        var temp = await connection.QuerySingleOrDefaultAsync<GlobalSettingsRaw>(
+            "SELECT * FROM global_settings WHERE lock = 0");
+        var globalSettings = new GlobalSettings(temp.AotYearStart, temp.AotScaleFactor, temp.CountryResearchSlots-1,
+            temp.CompanyResearchSlots-1);
+        return globalSettings;
     }
 }

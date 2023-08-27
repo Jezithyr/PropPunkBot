@@ -6,6 +6,51 @@ namespace PeaceKeeper.Services;
 
 public partial class ResearchService
 {
+    public async Task<List<Technology>> GetCompanyResearchedTechs(Guid companyId,
+        NpgsqlConnection? dbConnection = null)
+    {
+        await using var connection = await _db.ResolveDatabase(dbConnection);
+        var completedProgress = await connection.QueryAsync
+            <CompanyResearchProgressRaw, Company, Technology,CompanyResearchProgress>
+            (
+                "SELECT * FROM company_research_progress " +
+                "LEFT JOIN companies ON companies.id = company_research_progress.companyid " +
+                "LEFT JOIN technologies ON technologies.id = company_research_progress.techid " +
+                "WHERE companyid = @id " +
+                "AND completion >= 1",
+                (progressData, company, tech) => new CompanyResearchProgress(
+                    company,
+                    tech,
+                    progressData.Completion
+                ), new
+                {
+                    id = companyId
+                }
+            );
+
+        var techlist = new List<Technology>();
+        if (completedProgress == null)
+            return new List<Technology>();
+        foreach (var progress in completedProgress)
+        {
+            techlist.Add(progress.Tech);
+        }
+        return techlist;
+    }
+
+    public async Task<decimal> GetCompanyTechnologyProgress(Guid companyId, Guid techId, NpgsqlConnection? dbConnection = null)
+    {
+        await using var connection = await _db.ResolveDatabase(dbConnection);
+        var completedProgress = await connection.QuerySingleOrDefaultAsync<CompanyResearchProgressRaw>(
+            "SELECT * FROM company_research_progress WHERE companyid = @id " +
+            "AND techid = @tech",
+            new {id = companyId, tech = techId}
+        );
+        if (completedProgress == null)
+            return 0;
+        return completedProgress.Completion;
+    }
+
      public async Task<Dictionary<int,CompanyResearchSlot>?> GetCompanyResearchSlots(Guid companyId,
         NpgsqlConnection? dbConnection = null)
     {
@@ -13,7 +58,7 @@ public partial class ResearchService
         var researchQueues = await connection.QueryAsync
             <CompanyResearchSlotRaw, Company, Technology,CompanyResearchSlot>(
                 "SELECT * FROM company_research_slots " +
-                "LEFT JOIN countries ON countries.id = company_research_slots.companyid " +
+                "LEFT JOIN companies ON companies.id = company_research_slots.companyid " +
                 "LEFT JOIN technologies ON technologies.id = company_research_slots.techid " +
                 "WHERE company_research_slots.companyid = @id",
                 (researchData, company, techid) => new CompanyResearchSlot(

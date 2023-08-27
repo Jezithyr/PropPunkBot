@@ -6,6 +6,52 @@ namespace PeaceKeeper.Services;
 
 public partial class ResearchService
 {
+    public async Task<List<Technology>> GetCountryResearchedTechs(Guid countryId,
+        NpgsqlConnection? dbConnection = null)
+    {
+        await using var connection = await _db.ResolveDatabase(dbConnection);
+        var completedProgress = await connection.QueryAsync
+            <CountryResearchProgressRaw, Country, Technology,CountryResearchProgress>
+        (
+            "SELECT * FROM country_research_progress " +
+            "LEFT JOIN countries ON countries.id = country_research_progress.countryid " +
+            "LEFT JOIN technologies ON technologies.id = country_research_progress.techid " +
+            "WHERE countryid = @id " +
+            "AND completion >= 1",
+            (progressData, country, tech) => new CountryResearchProgress(
+                country,
+                tech,
+                progressData.Completion
+            ),
+            new
+            {
+                id = countryId
+            }
+        );
+
+        var techlist = new List<Technology>();
+        if (completedProgress == null)
+            return new List<Technology>();
+        foreach (var progress in completedProgress)
+        {
+            techlist.Add(progress.Tech);
+        }
+        return techlist;
+    }
+
+    public async Task<decimal> GetCountryTechnologyProgress(Guid countryId, Guid techId, NpgsqlConnection? dbConnection = null)
+    {
+        await using var connection = await _db.ResolveDatabase(dbConnection);
+        var completedProgress = await connection.QuerySingleOrDefaultAsync<CountryResearchProgressRaw>(
+            "SELECT * FROM country_research_progress WHERE countryid = @id " +
+            "AND techid = @tech",
+            new {id = countryId, tech = techId}
+        );
+        if (completedProgress == null)
+            return 0;
+        return completedProgress.Completion;
+    }
+
     public async Task<Dictionary<int,CountryResearchSlot>?> GetCountryResearchSlots(Guid countryId,
         NpgsqlConnection? dbConnection = null)
     {

@@ -1,12 +1,13 @@
+using Discord.WebSocket;
 using Npgsql;
+using PeaceKeeper.Services;
 
 namespace PeaceKeeper.Database;
 
-public sealed class DbService
+public sealed class DbService : PeacekeeperCoreServiceBase
 {
-    private readonly NpgsqlDataSource _source;
 
-    public DbService()
+    public DbService(DiscordSocketClient client) : base(client)
     {
         var connString = new NpgsqlConnectionStringBuilder
         {
@@ -19,6 +20,8 @@ public sealed class DbService
 
         _source = NpgsqlDataSource.Create(connString);
     }
+
+    private readonly NpgsqlDataSource _source;
 
     public NpgsqlConnection GetSync()
     {
@@ -38,4 +41,5 @@ public sealed class DbService
         }
         return dbConnection;
     }
+
 }

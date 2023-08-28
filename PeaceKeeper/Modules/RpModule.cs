@@ -17,15 +17,17 @@ public partial class RpModule : PeacekeeperInteractionModule
     private readonly RPService _rpService;
     private readonly CountryService _country;
     private readonly CompanyService _company;
+    private readonly DbService _db;
 
     public RpModule(UserService user, PermissionsService perms, SettingsService settings, InteractionService interaction,
-        DiscordSocketClient client, WorldStateService worldstate, RPService rpService, CountryService country, CompanyService company) :
+        DiscordSocketClient client, WorldStateService worldstate, RPService rpService, CountryService country, CompanyService company, DbService db) :
         base(user, perms, settings, interaction, client)
     {
         _worldstate = worldstate;
         _rpService = rpService;
         _country = country;
         _company = company;
+        _db = db;
         client.ModalSubmitted += ClientOnModalSubmitted;
     }
     private async Task ClientOnModalSubmitted(SocketModal arg)
@@ -38,16 +40,8 @@ public partial class RpModule : PeacekeeperInteractionModule
     {
         await DeferAsync();
         var caller = Context.User;
-        if (caller == null)
-        {
-            await FollowupAsync($"Cannot run this command without a user");
+        if (! await CheckPermissions(GlobalPermissionLevel.CanRp))
             return;
-        }
-        if (await Perms.UserHasPermission((long) caller.Id, GlobalPermissionLevel.CanRp))
-        {
-            await FollowupAsync($"You do not have the permissions to run this command");
-            return;
-        }
         _rpService.SetRpMode((long)caller.Id, rpMode, characterName);
     }
     [MessageCommand("rp")]

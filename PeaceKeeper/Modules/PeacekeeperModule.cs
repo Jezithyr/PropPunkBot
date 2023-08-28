@@ -1,3 +1,4 @@
+using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
 using PeaceKeeper.Database;
@@ -29,11 +30,11 @@ public abstract class PeacekeeperInteractionModule : InteractionModuleBase
         var caller = Context.User;
         if (caller == null)
         {
-            await FollowupAsync($"Cannot run this command without a user");
+            await FollowupAsync($"Cannot run this command without a user", ephemeral:true);
             return false;
         }
         if (!await Perms.UserHasPermission((long) caller.Id, permission)) return true;
-        await FollowupAsync($"You do not have the permissions to run this command");
+        await FollowupAsync($"You do not have the permissions to run this command", ephemeral:true);
         return false;
     }
 }

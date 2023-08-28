@@ -7,9 +7,6 @@ namespace PeaceKeeper.Services;
 
 public sealed class NewsService : PeacekeeperServiceBase
 {
-    public NewsService(SettingsService settings, UserService users, DbService db) : base(settings, users, db)
-    {
-    }
 
     public async Task CreateNewsArticle(string organization, NewsType newsType, string text,
         string? imageLink = null,string? organizationIconLink = null, NpgsqlConnection? dbConnection = null)
@@ -56,4 +53,7 @@ public sealed class NewsService : PeacekeeperServiceBase
         return true;
     }
 
+    public NewsService(SettingsService settings, PermissionsService perms, UserService users, DbService db, WorldStateService worldState) : base(settings, perms, users, db, worldState)
+    {
+    }
 }

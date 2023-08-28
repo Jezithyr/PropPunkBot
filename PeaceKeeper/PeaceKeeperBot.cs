@@ -27,7 +27,7 @@ public sealed class PeaceKeeperBot
         InteractionService = new InteractionService(discordClient.Rest);
         services.AddSingleton(discordClient);
         services.AddSingleton(InteractionService);
-        services.AddSingleton<DbService>();
+        AutoRegisterServices(ref services, typeof(PeacekeeperCoreServiceBase));
         AutoRegisterServices(ref services, typeof(PeacekeeperServiceBase));
         _services = services.BuildServiceProvider();
         Client = _services.GetRequiredService<DiscordSocketClient>();
@@ -72,13 +72,6 @@ public sealed class PeaceKeeperBot
 #else
         await InteractionService.RegisterCommandsGloballyAsync();
 #endif
-        foreach (var serviceType in _autoServiceTypes)
-        {
-            var service = _services.GetService(serviceType) as PeacekeeperServiceBase;
-            if (service == null) continue;
-            await service.OnClientReady();
-        }
-
     }
 
     private async Task OnInteractionCreated(SocketInteraction interaction)

@@ -1,12 +1,15 @@
 using Dapper;
+using Discord.WebSocket;
 using Npgsql;
 using PeaceKeeper.Database;
 using PeaceKeeper.Database.Models;
 
 namespace PeaceKeeper.Services;
 
-public sealed class WorldStateService : PeacekeeperServiceBase
+public sealed class WorldStateService : PeacekeeperCoreServiceBase
 {
+    private readonly DbService _db;
+
     public int YearsSinceStart { get; private set; }
     public int CurrentQuarter{ get; private set; }
 
@@ -14,7 +17,7 @@ public sealed class WorldStateService : PeacekeeperServiceBase
 
     public async Task<WorldState> Get(NpgsqlConnection? dbConnection = null)
     {
-        await using var connection = await Db.ResolveDatabase(dbConnection);
+        await using var connection = await _db.ResolveDatabase(dbConnection);
 
         var rawState = await dbConnection.QuerySingleAsync<WorldStateRaw>(
             "SELECT * FROM world_state WHERE lock = 0 LIMIT 1");
@@ -23,21 +26,21 @@ public sealed class WorldStateService : PeacekeeperServiceBase
 
     public async Task<DateTime> GetCurrentTurnDate(NpgsqlConnection? dbConnection = null)
     {
-        await using var connection = await Db.ResolveDatabase(dbConnection);
+        await using var connection = await _db.ResolveDatabase(dbConnection);
         var worldState = await Get(connection);
         return worldState.CurrentDate;
     }
 
     public async Task<(int, int)> GetCurrentTurnDateQuarters(NpgsqlConnection? dbConnection = null)
     {
-        await using var connection = await Db.ResolveDatabase(dbConnection);
+        await using var connection = await _db.ResolveDatabase(dbConnection);
         var worldState = await Get(connection);
         return (worldState.Year, worldState.Quarter);
     }
 
     public async Task Tick(int numberOfTicks = 1, NpgsqlConnection? dbConnection = null)
     {
-        await using var connection = await Db.ResolveDatabase(dbConnection);
+        await using var connection = await _db.ResolveDatabase(dbConnection);
         var worldState = await dbConnection.QuerySingleAsync<WorldState>(
             "SELECT * FROM world_state WHERE lock = 0 LIMIT 1");
 
@@ -60,7 +63,8 @@ public sealed class WorldStateService : PeacekeeperServiceBase
             new {year = YearsSinceStart, quarter = CurrentQuarter});
     }
 
-    public WorldStateService(SettingsService settings, UserService users, DbService db) : base(settings, users, db)
+    public WorldStateService(DiscordSocketClient client, DbService db) : base(client)
     {
+        _db = db;
     }
 }

@@ -8,9 +8,6 @@ namespace PeaceKeeper.Services;
 
 public class CompanyService : PeacekeeperServiceBase
 {
-    public CompanyService(SettingsService settings, UserService users, DbService db) : base(settings, users, db)
-    {
-    }
 
     public async Task<Company?> GetCompany(Guid companyId, NpgsqlConnection? dbConnection = null)
     {
@@ -100,5 +97,7 @@ public class CompanyService : PeacekeeperServiceBase
         return true;
     }
 
-
+    public CompanyService(SettingsService settings, PermissionsService perms, UserService users, DbService db, WorldStateService worldState) : base(settings, perms, users, db, worldState)
+    {
+    }
 }

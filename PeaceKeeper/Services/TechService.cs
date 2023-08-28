@@ -167,7 +167,7 @@ public sealed class TechService : PeacekeeperServiceBase
         return techs == null ? new HashSet<Technology>() : techs.ToHashSet();
     }
 
-    public TechService(SettingsService settings, UserService users, DbService db) : base(settings, users, db)
+    public TechService(SettingsService settings, PermissionsService perms, UserService users, DbService db, WorldStateService worldState) : base(settings, perms, users, db, worldState)
     {
     }
 }

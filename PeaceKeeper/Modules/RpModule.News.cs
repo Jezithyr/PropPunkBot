@@ -1,6 +1,8 @@
+using Dapper;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using PeaceKeeper.Database;
 using PeaceKeeper.Database.Models;
 using PeaceKeeper.Modals;
 using ModalBuilder = Discord.Interactions.Builders.ModalBuilder;
@@ -14,6 +16,7 @@ public partial class RpModule
     private const string OrgIconId = "orgIcon";
     private const string ImageId = "imgUrl";
     private const string TextId = "text";
+
 
     [SlashCommand("createnewspaper", "Create a newspaper entry, you must be trusted to use this command!")]
     public async Task CreateNewsPrintArticle()
@@ -34,17 +37,8 @@ public partial class RpModule
 
     public async Task CreateNewsModal(NewsType newsType)
     {
-        var caller = Context.User;
-        if (caller == null)
-        {
-            await FollowupAsync($"Cannot run this command without a user");
+        if (! await CheckPermissions(GlobalPermissionLevel.SendNews))
             return;
-        }
-        if (await Perms.UserHasPermission((long) caller.Id, GlobalPermissionLevel.RemoveTrusted))
-        {
-            await FollowupAsync($"You do not have the permissions to run this command");
-            return;
-        }
 
         string newsTitle;
         string orgPlaceholder;
@@ -117,6 +111,10 @@ public partial class RpModule
         var (currentYear, currentQuarter) = await _worldstate.GetCurrentTurnDateQuarters();
         if (arg.Data.CustomId != NewsModalId) return;
         string?[] newsData = new string[4];
+
+        NewsType newsType;
+        if (!Enum.TryParse(arg.Data.CustomId, out newsType))
+            newsType = NewsType.Print;
         foreach (var socketMessageData in arg.Data.Components)
         {
             if (socketMessageData == null) continue;
@@ -152,5 +150,15 @@ public partial class RpModule
             embed.ImageUrl = newsData[2];
         embed.AddField("", newsData[1]);
         await arg.RespondAsync(embed: embed.Build());
+        await using var connection = await _db.Get();
+        await connection.QueryAsync(
+            "INSERT INTO news(organization, newstype, text, imagelink, organizationiconlink, dateyear, datequarter) " +
+            "VALUES(@org,@newstype,@text,@imglink,@orgiconlink,@dateyear,@datequarter) " +
+            "ON CONFLICT DO NOTHING",
+            new
+            {
+                org = newsData[0], newstype = newsType, text = newsData[1],
+                imglink = newsData[2], orgiconlink = newsData[3], dateyear = currentYear, datequarter = currentQuarter
+            });
     }
 }

@@ -8,10 +8,6 @@ namespace PeaceKeeper.Services;
 
 public class CountryService : PeacekeeperServiceBase
  {
-
-     public CountryService(SettingsService settings, UserService users, DbService db) : base(settings, users, db)
-     {
-     }
     public async Task<Country?> GetCountry(Guid countryId, NpgsqlConnection? dbConnection = null)
     {
         await using var connection = await Db.ResolveDatabase(dbConnection);
@@ -113,4 +109,7 @@ public class CountryService : PeacekeeperServiceBase
         return true;
     }
 
+    public CountryService(SettingsService settings, PermissionsService perms, UserService users, DbService db, WorldStateService worldState) : base(settings, perms, users, db, worldState)
+    {
+    }
  }

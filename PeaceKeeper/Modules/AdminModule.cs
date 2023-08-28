@@ -17,17 +17,8 @@ public partial class AdminModule : PeacekeeperInteractionModule
     public async Task Remove(IUser user)
     {
         await DeferAsync();
-        var caller = Context.User;
-        if (caller == null)
-        {
-            await FollowupAsync($"Cannot run this command without a user");
+        if (! await CheckPermissions(GlobalPermissionLevel.UserManagement))
             return;
-        }
-        if (await Perms.UserHasPermission((long) caller.Id, GlobalPermissionLevel.UserManagement))
-        {
-            await FollowupAsync($"You do not have the permissions to run this command");
-            return;
-        }
 
         if (await User.Remove((long) user.Id))
         {
@@ -41,18 +32,8 @@ public partial class AdminModule : PeacekeeperInteractionModule
     public async Task Add(IUser user)
     {
         await DeferAsync();
-        var caller = Context.User;
-        if (caller == null)
-        {
-            await FollowupAsync($"Cannot run this command without a user");
+        if (! await CheckPermissions(GlobalPermissionLevel.UserManagement))
             return;
-        }
-
-        if (await Perms.UserHasPermission((long) user.Id, GlobalPermissionLevel.UserManagement))
-        {
-            await FollowupAsync($"You do not have the permissions to run this command");
-            return;
-        }
 
         if (await User.Add((long) user.Id))
         {
@@ -66,17 +47,8 @@ public partial class AdminModule : PeacekeeperInteractionModule
     public async Task TrustUser(IUser user)
     {
         await DeferAsync();
-        var caller = Context.User;
-        if (caller == null)
-        {
-            await FollowupAsync($"Cannot run this command without a user");
+        if (! await CheckPermissions(GlobalPermissionLevel.MakeTrusted))
             return;
-        }
-        if (await Perms.UserHasPermission((long) caller.Id, GlobalPermissionLevel.MakeTrusted))
-        {
-            await FollowupAsync($"You do not have the permissions to run this command");
-            return;
-        }
         await Perms.SetPermissionsForUser((long) user.Id, GlobalPermissionLevel.TrustedUser);
         await FollowupAsync($"{user.Username} is now trusted!");
     }
@@ -86,16 +58,8 @@ public partial class AdminModule : PeacekeeperInteractionModule
     {
         await DeferAsync();
         var caller = Context.User;
-        if (caller == null)
-        {
-            await FollowupAsync($"Cannot run this command without a user");
+        if (! await CheckPermissions(GlobalPermissionLevel.RemoveTrusted))
             return;
-        }
-        if (await Perms.UserHasPermission((long) caller.Id, GlobalPermissionLevel.RemoveTrusted))
-        {
-            await FollowupAsync($"You do not have the permissions to run this command");
-            return;
-        }
         await Perms.SetPermissionsForUser((long) user.Id, GlobalPermissionLevel.User);
         await FollowupAsync($"{user.Username} is now trusted!");
     }

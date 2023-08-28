@@ -7,11 +7,15 @@ public abstract class PeacekeeperServiceBase
     protected readonly DbService Db;
     protected readonly SettingsService Settings;
     protected readonly UserService Users;
-    public PeacekeeperServiceBase(SettingsService settings, UserService users, DbService db)
+    protected readonly PermissionsService Perms;
+    protected readonly WorldStateService WorldState;
+    public PeacekeeperServiceBase(SettingsService settings, PermissionsService perms,UserService users, DbService db, WorldStateService worldState)
     {
         Settings = settings;
+        Perms = perms;
         Users = users;
         Db = db;
+        WorldState = worldState;
     }
 
     public async virtual Task OnClientReady()

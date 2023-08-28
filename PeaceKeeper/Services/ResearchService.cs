@@ -13,7 +13,7 @@ public partial class ResearchService : PeacekeeperServiceBase
     public async Task<float> GetAotMultiplier(Technology tech)
     {
         var globalSettings = await Settings.GetSettings();
-        var worldState = await _worldState.GetWorldState();
+        var worldState = await _worldState.Get();
         var percentAot = tech.Year - worldState.Year/globalSettings.AotYearStart;
         var aotModifier = MathF.Pow(globalSettings.AotScaleFactor, MathF.Max(percentAot, 1) + 1)
                           - globalSettings.AotScaleFactor;

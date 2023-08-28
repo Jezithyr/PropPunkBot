@@ -13,4 +13,8 @@ public abstract class PeacekeeperServiceBase
         Users = users;
         Db = db;
     }
+
+    public async virtual Task OnClientReady()
+    {
+    }
 }

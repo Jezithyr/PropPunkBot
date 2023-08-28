@@ -4,13 +4,27 @@ public record GlobalSettingsRaw(
     int Lock,
     int AotYearStart,
     float AotScaleFactor,
-    int CountryResearchSlots,
-    int CompanyResearchSlots
+    int CountryResearchSlotCount,
+    int CompanyResearchSlotCount,
+    long OfficialServerId
     );
 
 public record GlobalSettings(
     int AotYearStart,
     float AotScaleFactor,
-    int CountryResearchSlots,
-    int CompanyResearchSlots
-);
+    int LastCountryResearchSlotIndex,
+    int LastCompanyResearchSlotIndex,
+    long OfficialServerId
+)
+{
+    public GlobalSettings(GlobalSettingsRaw raw) :
+        this(raw.AotYearStart,
+            raw.AotScaleFactor, //shift research slot count to array notation
+            raw.CountryResearchSlotCount - 1,
+            raw.CompanyResearchSlotCount - 1,
+            raw.OfficialServerId
+        )
+    {
+    }
+
+}

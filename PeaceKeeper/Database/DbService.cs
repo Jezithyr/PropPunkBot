@@ -20,6 +20,11 @@ public sealed class DbService
         _source = NpgsqlDataSource.Create(connString);
     }
 
+    public NpgsqlConnection GetSync()
+    {
+        return _source.OpenConnection();
+    }
+
     public ValueTask<NpgsqlConnection> Get()
     {
         return _source.OpenConnectionAsync();

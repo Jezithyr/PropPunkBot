@@ -18,18 +18,22 @@ public sealed class PeaceKeeperBot
     public CommandHandler Commands { get; init; }
     public DiscordSocketClient Client { get; init; }
     public InteractionService InteractionService { get; init; }
+    private readonly List<Type> _autoServiceTypes = new();
     private readonly IServiceProvider _services;
     private PeaceKeeperBot()
     {
         var services = new ServiceCollection();
-        services.AddSingleton<DiscordSocketClient>();
+        var discordClient = new DiscordSocketClient();
+        InteractionService = new InteractionService(discordClient.Rest);
+        services.AddSingleton(discordClient);
+        services.AddSingleton(InteractionService);
         services.AddSingleton<DbService>();
         AutoRegisterServices(ref services, typeof(PeacekeeperServiceBase));
         _services = services.BuildServiceProvider();
         Client = _services.GetRequiredService<DiscordSocketClient>();
         Commands = 
             new CommandHandler(Client, new CommandService(), _services);
-        InteractionService = new InteractionService(Client.Rest);
+
     }
 
     public static async Task<PeaceKeeperBot> Create()
@@ -43,10 +47,9 @@ public sealed class PeaceKeeperBot
     {
         foreach (var type in typeof(PeaceKeeperBot).Assembly.GetTypes())
         {
-            if (type.IsAssignableTo(serviceBaseClass) && !type.IsAbstract)
-            {
-                services.AddSingleton(type);
-            }
+            if (!type.IsAssignableTo(serviceBaseClass) || type.IsAbstract) continue;
+            services.AddSingleton(type);
+            _autoServiceTypes.Add(type);
         }
     }
 
@@ -69,6 +72,13 @@ public sealed class PeaceKeeperBot
 #else
         await InteractionService.RegisterCommandsGloballyAsync();
 #endif
+        foreach (var serviceType in _autoServiceTypes)
+        {
+            var service = _services.GetService(serviceType) as PeacekeeperServiceBase;
+            if (service == null) continue;
+            await service.OnClientReady();
+        }
+
     }
 
     private async Task OnInteractionCreated(SocketInteraction interaction)

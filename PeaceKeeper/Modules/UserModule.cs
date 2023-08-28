@@ -1,6 +1,7 @@
 using Dapper;
 using Discord;
 using Discord.Interactions;
+using Discord.WebSocket;
 using PeaceKeeper.Database;
 using PeaceKeeper.Database.Models;
 using PeaceKeeper.Services;
@@ -10,11 +11,6 @@ namespace PeaceKeeper.Modules;
 [Group("user", "user related commands")]
 public sealed class UserModule : PeacekeeperInteractionModule
 {
-
-    public UserModule(UserService user, PermissionsService perms, SettingsService settings) : base(user, perms, settings)
-    {
-    }
-
 
     [UserCommand("Get Info")]
     public async Task GetInfo(IUser user)
@@ -65,4 +61,7 @@ public sealed class UserModule : PeacekeeperInteractionModule
         }
     }
 
+    public UserModule(UserService user, PermissionsService perms, SettingsService settings, InteractionService interaction, DiscordSocketClient client) : base(user, perms, settings, interaction, client)
+    {
+    }
 }

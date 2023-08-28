@@ -1,22 +1,34 @@
+using Dapper;
+using Discord.WebSocket;
+using Npgsql;
 using PeaceKeeper.Database;
 
 namespace PeaceKeeper.Services;
 
 public sealed class RPService : PeacekeeperServiceBase
 {
-    private readonly Dictionary<long, (RpMode, string?)> _rpModeData = new();
-
-    public void SetRpMode(long userId, RpMode mode, string? character)
+    public async Task<bool> SetRpMode(long userId, RpMode mode, string? character)
     {
-        _rpModeData[userId] = (mode, character);
+        await using var connection = await Db.Get();
+        var userdata = await Users.Get(userId);
+        if (userdata == null)
+            return false;
+        await connection.QueryAsync(
+            "UPDATE users SET rpmode = @rpmode, rpcharacter = @rpchar WHERE id = @id",
+            new {id = userId, rpmode = mode, rpchar = character});
+        return true;
     }
 
-    public (RpMode, string?) GetRpMode (long userId)
+    public async Task<(RpMode, string?)> GetRpMode (long userId)
     {
-        return !_rpModeData.TryGetValue(userId, out var data) ? (RpMode.OOC, null) : data;
+        await using var connection = await Db.Get();
+        var userdata = await Users.Get(userId);
+        if (userdata == null)
+            throw new ArgumentException("Invalid user");
+        return (userdata.RpMode,userdata.RpCharacter);
     }
 
-    public RPService(SettingsService settings, PermissionsService perms, UserService users, DbService db, WorldStateService worldState) : base(settings, perms, users, db, worldState)
+    public RPService(SettingsService settings, PermissionsService perms, UserService users, DbService db, WorldStateService worldState, DiscordSocketClient client) : base(settings, perms, users, db, worldState, client)
     {
     }
 }

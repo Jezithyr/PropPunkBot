@@ -7,27 +7,24 @@ namespace PeaceKeeper.Services;
 
 public partial class ResearchService
 {
-    public async Task<HashSet<Technology>> GetValidTechsForCompany(Guid companyId,
-        NpgsqlConnection? dbConnection = null)
+    public async Task<HashSet<Technology>> GetValidTechsForCompany(Guid companyId)
     {
-        await using var connection = await Db.ResolveDatabase(dbConnection);
-        HashSet<Technology> researchedTechs = await GetCompanyResearchedTechs(companyId, connection);
+        await using var connection = await Db.Get();
+        HashSet<Technology> researchedTechs = await GetCompanyResearchedTechs(companyId);
         return await GetValidTechs(researchedTechs, connection);
 
     }
 
-    public async Task<HashSet<Technology>> GetValidTechsForCompany(Guid companyId, TechField techField,
-        NpgsqlConnection? dbConnection = null)
+    public async Task<HashSet<Technology>> GetValidTechsForCompany(Guid companyId, TechField techField)
     {
-        await using var connection = await Db.ResolveDatabase(dbConnection);
-        HashSet<Technology> researchedTechs = await GetCompanyResearchedTechsInField(companyId, techField, connection);
+        await using var connection = await Db.Get();
+        HashSet<Technology> researchedTechs = await GetCompanyResearchedTechsInField(companyId, techField);
         return await GetValidTechs(researchedTechs, connection);
     }
 
-    public async Task<HashSet<Technology>> GetCompanyResearchedTechs(Guid companyId,
-        NpgsqlConnection? dbConnection = null)
+    public async Task<HashSet<Technology>> GetCompanyResearchedTechs(Guid companyId)
     {
-        await using var connection = await Db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.Get();
         var completedProgress = await connection.QueryAsync
             <CompanyResearchProgressRaw, Company, Technology,CompanyResearchProgress>
             (
@@ -56,10 +53,9 @@ public partial class ResearchService
         return techlist;
     }
 
-    public async Task<HashSet<Technology>> GetCompanyResearchedTechsInField(Guid companyId, TechField field,
-        NpgsqlConnection? dbConnection = null)
+    public async Task<HashSet<Technology>> GetCompanyResearchedTechsInField(Guid companyId, TechField field)
     {
-        await using var connection = await Db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.Get();
         var completedProgress = await connection.QueryAsync
             <CompanyResearchProgressRaw, Company, Technology,CompanyResearchProgress>
             (
@@ -88,9 +84,9 @@ public partial class ResearchService
         return techlist;
     }
 
-    public async Task<decimal> GetCompanyTechnologyProgress(Guid companyId, Guid techId, NpgsqlConnection? dbConnection = null)
+    public async Task<decimal> GetCompanyTechnologyProgress(Guid companyId, Guid techId)
     {
-        await using var connection = await Db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.Get();
         var completedProgress = await connection.QuerySingleOrDefaultAsync<CompanyResearchProgressRaw>(
             "SELECT * FROM company_research_progress WHERE id = @id " +
             "AND techid = @tech",
@@ -101,10 +97,9 @@ public partial class ResearchService
         return completedProgress.Completion;
     }
 
-     public async Task<Dictionary<int,CompanyResearchSlot>?> GetCompanyResearchSlots(Guid companyId,
-        NpgsqlConnection? dbConnection = null)
+     public async Task<Dictionary<int,CompanyResearchSlot>?> GetCompanyResearchSlots(Guid companyId)
     {
-        await using var connection = await Db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.Get();
         var researchQueues = await connection.QueryAsync
             <CompanyResearchSlotRaw, Company, Technology,CompanyResearchSlot>(
                 "SELECT * FROM company_research_slots " +
@@ -126,10 +121,9 @@ public partial class ResearchService
         return slots;
     }
 
-    public async Task<CompanyResearchSlot?> GetCompanyResearchSlot(Guid companyId, int slotNumber,
-        NpgsqlConnection? dbConnection = null)
+    public async Task<CompanyResearchSlot?> GetCompanyResearchSlot(Guid companyId, int slotNumber)
     {
-        await using var connection = await Db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.Get();
         var researchSlots = await connection.QueryAsync
             <CompanyResearchSlotRaw, Company, Technology,CompanyResearchSlot>(
             "SELECT * FROM company_research_slots " +
@@ -149,10 +143,9 @@ public partial class ResearchService
         return researchSlots == null ? null : researchSlots.SingleOrDefault() ?? null;
     }
 
-    public async Task<int> UpdateCompanyTech(Guid companyId, Technology tech, int points,
-        NpgsqlConnection? dbConnection = null)
+    public async Task<int> UpdateCompanyTech(Guid companyId, Technology tech, int points)
     {
-        await using var connection = await Db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.Get();
         int overflow = points;
         var researchProgress = await connection.QuerySingleOrDefaultAsync<CompanyResearchProgress>(
             "SELECT * FROM company_research_progress WHERE id = @id " +
@@ -176,11 +169,10 @@ public partial class ResearchService
         return overflow;
     }
 
-    public async Task<bool> UpdateCompanyResearch(Guid companyId, int researchPoints,
-        NpgsqlConnection? dbConnection = null)
+    public async Task<bool> UpdateCompanyResearch(Guid companyId, int researchPoints)
     {
-        await using var connection = await Db.ResolveDatabase(dbConnection);
-        var currentResearchSlots = await GetCompanyResearchSlots(companyId, dbConnection);
+        await using var connection = await Db.Get();
+        var currentResearchSlots = await GetCompanyResearchSlots(companyId);
         if (currentResearchSlots == null)
             return false;
         //get all slots that have techs assigned
@@ -201,7 +193,7 @@ public partial class ResearchService
         var overflow = await GetAndClearCompanyOverflow(companyId, connection);
         foreach (var slotData in activeSlots)
         {
-            overflow = await UpdateCompanyTech(companyId, slotData.Tech!, researchPerSlot + overflow, connection);
+            overflow = await UpdateCompanyTech(companyId, slotData.Tech!, researchPerSlot + overflow);
         }
 
         if (overflow > 0)

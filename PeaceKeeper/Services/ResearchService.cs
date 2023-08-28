@@ -1,4 +1,5 @@
 using Dapper;
+using Discord.WebSocket;
 using Npgsql;
 using PeaceKeeper.Database;
 using PeaceKeeper.Database.Models;
@@ -31,12 +32,12 @@ public partial class ResearchService : PeacekeeperServiceBase
         HashSet<Technology> validTechs = new();
         foreach (var validTech in researchedTechs)
         {
-            foreach (var possibleTech in await _techs.GetWithRequirement(validTech.Id, connection))
+            foreach (var possibleTech in await _techs.GetWithRequirement(validTech.Id))
             {
                 if (researchedTechs.Contains(possibleTech))
                     continue;
                 var valid = true;
-                foreach (var possiblePre in await _techs.GetRequirements(possibleTech.Id, connection))
+                foreach (var possiblePre in await _techs.GetRequirements(possibleTech.Id))
                 {
                     if (researchedTechs.Contains(possiblePre))
                         continue;
@@ -49,7 +50,7 @@ public partial class ResearchService : PeacekeeperServiceBase
         return validTechs;
     }
 
-    public ResearchService(SettingsService settings, PermissionsService perms, UserService users, DbService db, WorldStateService worldState, TechService techs) : base(settings, perms, users, db, worldState)
+    public ResearchService(SettingsService settings, PermissionsService perms, UserService users, DbService db, WorldStateService worldState, DiscordSocketClient client, TechService techs) : base(settings, perms, users, db, worldState, client)
     {
         _techs = techs;
     }

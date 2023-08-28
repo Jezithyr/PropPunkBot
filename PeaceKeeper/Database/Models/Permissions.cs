@@ -1,7 +1,15 @@
 namespace PeaceKeeper.Database.Models;
 
 
-public record GlobalPermissions(long UserId, GlobalPermissionLevel Permissions);
+public record GlobalPermissionsRaw(long Id, int Permissions);
+
+public record GlobalPermissions(long Id, GlobalPermissionLevel Permissions)
+{
+    public GlobalPermissions(GlobalPermissionsRaw raw) : this(raw.Id, (GlobalPermissionLevel) raw.Permissions)
+    {
+    }
+};
+
 
 [Flags]
 public enum GlobalPermissionLevel
@@ -22,7 +30,7 @@ public enum GlobalPermissionLevel
     CanRp = 1<<12,
 
     User = Basic | CanRp,
-    TrustedUser = Basic | SendNews,
+    TrustedUser = User | SendNews,
     Verifier = TrustedUser | MakeTrusted,
     Moderator = Verifier | UserManagement | TechManagement | NewsManagement | CompanyManagement | CountryManagement
                 | DesignManagement | SecretAccess | EconomyManagement | RemoveTrusted,

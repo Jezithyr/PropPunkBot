@@ -1,5 +1,6 @@
 using Dapper;
 using Discord;
+using Discord.WebSocket;
 using Npgsql;
 using PeaceKeeper.Database;
 using PeaceKeeper.Database.Models;
@@ -8,36 +9,35 @@ namespace PeaceKeeper.Services;
 
 public class CountryService : PeacekeeperServiceBase
  {
-    public async Task<Country?> GetCountry(Guid countryId, NpgsqlConnection? dbConnection = null)
+    public async Task<Country?> GetCountry(Guid countryId)
     {
-        await using var connection = await Db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.Get();
         return await connection.QuerySingleOrDefaultAsync<Database.Models.Country>(
             "SELECT * FROM countries WHERE id = @id LIMIT 1",
             new {id = countryId});
     }
 
-    public async Task<Country?> GetCountry(string countryName, NpgsqlConnection? dbConnection = null)
+    public async Task<Country?> GetCountry(string countryName)
     {
-        await using var connection = await Db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.Get();
         return await connection.QuerySingleOrDefaultAsync<Database.Models.Country>(
             "SELECT * FROM countries WHERE name = @name LIMIT 1",
             new {name = countryName});
     }
 
-    public async Task<Country?> GetCountryFromCode(string countryCode, NpgsqlConnection? dbConnection = null)
+    public async Task<Country?> GetCountryFromCode(string countryCode)
     {
-        await using var connection = await Db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.Get();
         return await connection.QuerySingleOrDefaultAsync<Database.Models.Country>(
             "SELECT * FROM countries WHERE shortname = @code LIMIT 1",
             new {code = countryCode});
     }
 
-    public async Task<bool> AssignUser(long userId, Guid countryId, bool makeOwner = true,
-        NpgsqlConnection? dbConnection = null)
+    public async Task<bool> AssignUser(long userId, Guid countryId, bool makeOwner = true)
     {
-        await using var connection = await Db.ResolveDatabase(dbConnection);
-        var countryData = await GetCountry(countryId, dbConnection);
-        var userData = await Users.Get(userId, dbConnection);
+        await using var connection = await Db.Get();
+        var countryData = await GetCountry(countryId);
+        var userData = await Users.Get(userId);
         if (countryData == null || userData == null) return false;
         if (makeOwner)
         {
@@ -51,25 +51,22 @@ public class CountryService : PeacekeeperServiceBase
         return true;
     }
 
-    public async Task<bool> AssignUser(IUser user, Guid countryId, bool makeOwner = true ,
-        NpgsqlConnection? dbConnection = null)
+    public async Task<bool> AssignUser(IUser user, Guid countryId, bool makeOwner = true)
     {
-        return await AssignUser((long)user.Id, countryId, makeOwner, dbConnection);
+        return await AssignUser((long)user.Id, countryId, makeOwner);
     }
 
-    public async Task<bool> AssignUser(IUser user, string countryName, bool makeOwner = true,
-        NpgsqlConnection? dbConnection = null)
+    public async Task<bool> AssignUser(IUser user, string countryName, bool makeOwner = true)
     {
-        await using var connection = await Db.ResolveDatabase(dbConnection);
-        var countryData = await GetCountry(countryName, dbConnection);
+        await using var connection = await Db.Get();
+        var countryData = await GetCountry(countryName);
         if (countryData == null) return false;
-        return await AssignUser(user, countryData.Id, makeOwner, dbConnection);
+        return await AssignUser(user, countryData.Id, makeOwner);
     }
 
-    public async Task<bool> CreateCountry(string countryName, string countryCode, long? ownerId = null,
-        NpgsqlConnection? dbConnection = null)
+    public async Task<bool> CreateCountry(string countryName, string countryCode, long? ownerId = null)
     {
-        await using var connection = await Db.ResolveDatabase(dbConnection);
+        await using var connection = await Db.Get();
         if (countryName.Length > 128 || countryCode.Length > 4)
              return false;
         var country = await connection.QuerySingleOrDefaultAsync<Database.Models.Country>("SELECT * FROM countries WHERE name = @name LIMIT 1",
@@ -81,14 +78,14 @@ public class CountryService : PeacekeeperServiceBase
             new {name = countryName, shortname = countryCode});
         if (ownerId != null)
         {
-            return await AssignUser(ownerId.Value, countryId, true, connection);
+            return await AssignUser(ownerId.Value, countryId, true);
         }
         return true;
     }
-    public async Task<bool> RemoveCountry(Guid countryId, NpgsqlConnection? dbConnection = null)
+    public async Task<bool> RemoveCountry(Guid countryId)
     {
-        await using var connection = await Db.ResolveDatabase(dbConnection);
-        var countryData = await dbConnection.QuerySingleOrDefaultAsync<Database.Models.Country>(
+        await using var connection = await Db.Get();
+        var countryData = await connection.QuerySingleOrDefaultAsync<Database.Models.Country>(
             "SELECT * FROM countries WHERE id = @id LIMIT 1",
             new {id = countryId});
         if (countryData == null)
@@ -97,10 +94,10 @@ public class CountryService : PeacekeeperServiceBase
         return true;
     }
 
-    public async Task<bool> RemoveCountry(string countryName, NpgsqlConnection? dbConnection = null)
+    public async Task<bool> RemoveCountry(string countryName)
     {
-        await using var connection = await Db.ResolveDatabase(dbConnection);
-        var countryData = await dbConnection.QuerySingleOrDefaultAsync<Database.Models.Country>(
+        await using var connection = await Db.Get();
+        var countryData = await connection.QuerySingleOrDefaultAsync<Database.Models.Country>(
             "SELECT * FROM countries WHERE name = @name LIMIT 1",
             new {name = countryName});
         if (countryData == null)
@@ -109,7 +106,7 @@ public class CountryService : PeacekeeperServiceBase
         return true;
     }
 
-    public CountryService(SettingsService settings, PermissionsService perms, UserService users, DbService db, WorldStateService worldState) : base(settings, perms, users, db, worldState)
+    public CountryService(SettingsService settings, PermissionsService perms, UserService users, DbService db, WorldStateService worldState, DiscordSocketClient client) : base(settings, perms, users, db, worldState, client)
     {
     }
  }

@@ -10,23 +10,22 @@ public sealed class PermissionsService : PeacekeeperCoreServiceBase
 {
     private readonly DbService _db;
 
-    public async Task<bool> UserHasPermission(long userId, GlobalPermissionLevel permission,
-        NpgsqlConnection? dbConnection = null)
+    public async Task<bool> UserHasPermission(long userId, GlobalPermissionLevel permission)
     {
-        await using var connection = await _db.ResolveDatabase(dbConnection);
-        var userPerms = await connection.QuerySingleOrDefaultAsync<GlobalPermissions>(
+        await using var connection = await _db.Get();
+        var userPerms = await connection.QuerySingleOrDefaultAsync<GlobalPermissionsRaw>(
             "SELECT * FROM global_permissions where id = @id LIMIT 1",
             new {id = userId}
         );
-        if (userPerms == null)
-            return GlobalPermissionLevel.Default.HasFlag(permission);
-        return userPerms.Permissions.HasFlag(permission);
+        return userPerms == null
+            ? GlobalPermissionLevel.Default.HasFlag(permission)
+            : ((GlobalPermissionLevel)userPerms.Permissions).HasFlag(permission);
     }
 
 
-    public async Task<GlobalPermissionLevel> GetPermissionsForUser(long userId, NpgsqlConnection? dbConnection = null)
+    public async Task<GlobalPermissionLevel> GetPermissionsForUser(long userId)
     {
-        await using var connection = await _db.ResolveDatabase(dbConnection);
+        await using var connection = await _db.Get();
         var userPerms = await connection.QuerySingleOrDefaultAsync<GlobalPermissions>(
             "SELECT * FROM global_permissions where id = @id LIMIT 1",
             new {id = userId}
@@ -34,10 +33,9 @@ public sealed class PermissionsService : PeacekeeperCoreServiceBase
         return userPerms?.Permissions ?? GlobalPermissionLevel.Default;
     }
 
-    public async Task SetPermissionsForUser(long userId, GlobalPermissionLevel permissions,
-        NpgsqlConnection? dbConnection = null)
+    public async Task SetPermissionsForUser(long userId, GlobalPermissionLevel permissions)
     {
-        await using var connection = await _db.ResolveDatabase(dbConnection);
+        await using var connection = await _db.Get();
         await connection.QueryAsync(
             "UPDATE global_permissions SET permissions = @perms WHERE id = @id",
             new {id = userId}

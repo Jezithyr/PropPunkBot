@@ -14,26 +14,33 @@ namespace PeaceKeeper;
 
 public sealed class PeaceKeeperBot
 {
+    public static readonly char CommandPrefix = '$';
+
     public const ulong TestGuildId = 895070870870040618;
-    public CommandHandler Commands { get; init; }
+    public CommandHandlerService Commands { get; init; }
     public DiscordSocketClient Client { get; init; }
     public InteractionService InteractionService { get; init; }
-    private readonly List<Type> _autoServiceTypes = new();
     private readonly IServiceProvider _services;
     private PeaceKeeperBot()
     {
         var services = new ServiceCollection();
-        var discordClient = new DiscordSocketClient();
+        var socketConfig = new DiscordSocketConfig()
+        {
+            GatewayIntents = GatewayIntents.AllUnprivileged | GatewayIntents.MessageContent
+                                                            | GatewayIntents.GuildMembers
+        };
+        var discordClient = new DiscordSocketClient(socketConfig);
         InteractionService = new InteractionService(discordClient.Rest);
         services.AddSingleton(discordClient);
+        services.AddSingleton<CommandService>();
+        services.AddSingleton<CommandHandlerService>();
         services.AddSingleton(InteractionService);
         AutoRegisterServices(ref services, typeof(PeacekeeperCoreServiceBase));
         AutoRegisterServices(ref services, typeof(PeacekeeperServiceBase));
         _services = services.BuildServiceProvider();
         Client = _services.GetRequiredService<DiscordSocketClient>();
-        Commands = 
-            new CommandHandler(Client, new CommandService(), _services);
-
+        Commands = _services.GetRequiredService<CommandHandlerService>();
+        Commands.Initialize(_services);
     }
 
     public static async Task<PeaceKeeperBot> Create()
@@ -49,7 +56,6 @@ public sealed class PeaceKeeperBot
         {
             if (!type.IsAssignableTo(serviceBaseClass) || type.IsAbstract) continue;
             services.AddSingleton(type);
-            _autoServiceTypes.Add(type);
         }
     }
 
@@ -61,8 +67,9 @@ public sealed class PeaceKeeperBot
         {
             return Task.CompletedTask;
         };
-        await Commands.InstallCommandsAsync();
         await InteractionService.AddModulesAsync(Assembly.GetEntryAssembly(), _services);
+        await _services.GetRequiredService<CommandService>().AddModulesAsync(Assembly.GetEntryAssembly(), _services);
+        await Commands.InstallCommandsAsync();
     }
 
     private async Task OnClientReady()

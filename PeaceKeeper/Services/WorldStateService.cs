@@ -1,6 +1,5 @@
 using Dapper;
 using Discord.WebSocket;
-using Npgsql;
 using PeaceKeeper.Database;
 using PeaceKeeper.Database.Models;
 
@@ -15,33 +14,33 @@ public sealed class WorldStateService : PeacekeeperCoreServiceBase
 
     public delegate void OnWorldTick(int year, int quarter, DateOnly date);
 
-    public async Task<WorldState> Get(NpgsqlConnection? dbConnection = null)
+    public async Task<WorldState> Get()
     {
-        await using var connection = await _db.ResolveDatabase(dbConnection);
+        await using var connection = await _db.Get();
 
-        var rawState = await dbConnection.QuerySingleAsync<WorldStateRaw>(
+        var rawState = await connection.QuerySingleAsync<WorldStateRaw>(
             "SELECT * FROM world_state WHERE lock = 0 LIMIT 1");
         return new WorldState(rawState);
     }
 
-    public async Task<DateTime> GetCurrentTurnDate(NpgsqlConnection? dbConnection = null)
+    public async Task<DateTime> GetCurrentTurnDate()
     {
-        await using var connection = await _db.ResolveDatabase(dbConnection);
-        var worldState = await Get(connection);
+        await using var connection = await _db.Get();
+        var worldState = await Get();
         return worldState.CurrentDate;
     }
 
-    public async Task<(int, int)> GetCurrentTurnDateQuarters(NpgsqlConnection? dbConnection = null)
+    public async Task<(int, int)> GetCurrentTurnDateQuarters()
     {
-        await using var connection = await _db.ResolveDatabase(dbConnection);
-        var worldState = await Get(connection);
+        await using var connection = await _db.Get();
+        var worldState = await Get();
         return (worldState.Year, worldState.Quarter);
     }
 
-    public async Task Tick(int numberOfTicks = 1, NpgsqlConnection? dbConnection = null)
+    public async Task Tick(int numberOfTicks = 1)
     {
-        await using var connection = await _db.ResolveDatabase(dbConnection);
-        var worldState = await dbConnection.QuerySingleAsync<WorldState>(
+        await using var connection = await _db.Get();
+        var worldState = await connection.QuerySingleAsync<WorldState>(
             "SELECT * FROM world_state WHERE lock = 0 LIMIT 1");
 
         for (int i = 0; i < numberOfTicks; i++)
@@ -58,7 +57,7 @@ public sealed class WorldStateService : PeacekeeperCoreServiceBase
             }
             CurrentQuarter = newQuarter;
         }
-        await dbConnection.QuerySingleAsync<WorldState>(
+        await connection.QuerySingleAsync<WorldState>(
             "UPDATE world_state SET year = @year, quarter = @quarter WHERE lock = 0",
             new {year = YearsSinceStart, quarter = CurrentQuarter});
     }

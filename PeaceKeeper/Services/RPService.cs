@@ -15,7 +15,7 @@ public sealed class RPService : PeacekeeperServiceBase
             return false;
         await connection.QueryAsync(
             "UPDATE users SET rpmode = @rpmode, rpcharacter = @rpchar WHERE id = @id",
-            new {id = userId, rpmode = mode, rpchar = character});
+            new {id = userId, rpmode = (int)mode, rpchar = character});
         return true;
     }
 

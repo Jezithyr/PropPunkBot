@@ -14,7 +14,7 @@ namespace PeaceKeeper;
 
 public sealed class PeaceKeeperBot
 {
-    public static readonly char CommandPrefix = '$';
+    public static readonly char CommandPrefix = '!';
 
     public const ulong TestGuildId = 895070870870040618;
     public CommandHandlerService Commands { get; init; }

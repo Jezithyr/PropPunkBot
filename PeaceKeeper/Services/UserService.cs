@@ -33,7 +33,9 @@ public sealed class UserService : PeacekeeperCoreServiceBase
                 countryData,
                 userData.Leader,
                 companyData,
-                userData.Ceo
+                userData.Ceo,
+                userData.RpMode,
+                userData.RpCharacter
             ), new {id = userid});
         var temp = users?.SingleOrDefault();
         if (temp == null)

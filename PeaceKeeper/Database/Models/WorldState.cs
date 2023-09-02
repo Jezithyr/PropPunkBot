@@ -9,14 +9,14 @@ public record WorldStateRaw(
     );
 
 public record WorldState(
-    DateTime StartDate,
+    DateOnly StartDate,
     int Year,
     int Quarter,
-    DateTime CurrentDate
+    DateOnly CurrentDate
 )
 {
-    public WorldState(WorldStateRaw raw) : this(DateTime.Parse(raw.StartDate), raw.Year, raw.Quarter,
-        DateTime.Parse(raw.CurrentDate))
+    public WorldState(WorldStateRaw raw) : this(DateOnly.Parse(raw.StartDate), raw.Year, raw.Quarter,
+        DateOnly.Parse(raw.CurrentDate))
     {
     }
 }

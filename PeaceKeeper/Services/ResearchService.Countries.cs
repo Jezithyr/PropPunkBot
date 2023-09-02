@@ -193,7 +193,7 @@ public partial class ResearchService
     private async Task SetCountryOverflow(Guid countryId,int overflow ,NpgsqlConnection connection)
     {
         await connection.QueryAsync(
-            "UPDATE country_research_meta SET pointoverflow = @newoverflow " +
+            "UPDATE country_research_data SET pointoverflow = @newoverflow " +
             "WHERE id = @id",
             new{id = countryId, newoverflow = overflow}
         );
@@ -202,12 +202,12 @@ public partial class ResearchService
     private async Task<int> GetAndClearCountryOverflow(Guid countryId, NpgsqlConnection connection)
     {
         var metadata = await connection.QuerySingleOrDefaultAsync<CountryResearchMetaData>(
-            "SELECT * FROM country_research_meta WHERE id = @id ",
+            "SELECT * FROM country_research_data WHERE id = @id ",
             new{id = countryId}
             );
         var overflow = metadata.PointOverflow;
         await connection.QueryAsync(
-            "UPDATE country_research_meta SET pointoverflow = 0 " +
+            "UPDATE country_research_data SET pointoverflow = 0 " +
             "WHERE id = @id",
             new{id = countryId}
         );
@@ -216,16 +216,14 @@ public partial class ResearchService
 
     public async Task<HashSet<Technology>> GetValidTechsForCountry(Guid countryId)
     {
-        await using var connection = await Db.Get();
         HashSet<Technology> researchedTechs = await GetCountryResearchedTechs(countryId);
-        return await GetValidTechs(researchedTechs, connection);
+        return await GetValidTechs(researchedTechs);
 
     }
 
     public async Task<HashSet<Technology>> GetValidTechsForCountry(Guid countryId, TechField techField)
     {
-        await using var connection = await Db.Get();
         HashSet<Technology> researchedTechs = await GetCountryResearchedTechsInField(countryId, techField);
-        return await GetValidTechs(researchedTechs, connection);
+        return await GetValidTechs(researchedTechs);
     }
 }

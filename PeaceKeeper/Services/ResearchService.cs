@@ -26,8 +26,7 @@ public partial class ResearchService : PeacekeeperServiceBase
         return (int)MathF.Ceiling(aotCost* tech.Cost);
     }
 
-    private async Task<HashSet<Technology>> GetValidTechs(HashSet<Technology> researchedTechs,
-        NpgsqlConnection connection)
+    private async Task<HashSet<Technology>> GetValidTechs(HashSet<Technology> researchedTechs)
     {
         HashSet<Technology> validTechs = new();
         foreach (var validTech in researchedTechs)
@@ -50,8 +49,16 @@ public partial class ResearchService : PeacekeeperServiceBase
         return validTechs;
     }
 
+    
+    
     public ResearchService(SettingsService settings, PermissionsService perms, UserService users, DbService db, WorldStateService worldState, DiscordSocketClient client, TechService techs) : base(settings, perms, users, db, worldState, client)
     {
         _techs = techs;
+        worldState.RegisterTickEvent(OnWorldtick);
+    }
+
+    private void OnWorldtick(int year, int quarter, DateOnly date)
+    {
+
     }
 }

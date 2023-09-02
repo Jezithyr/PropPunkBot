@@ -9,17 +9,15 @@ public partial class ResearchService
 {
     public async Task<HashSet<Technology>> GetValidTechsForCompany(Guid companyId)
     {
-        await using var connection = await Db.Get();
         HashSet<Technology> researchedTechs = await GetCompanyResearchedTechs(companyId);
-        return await GetValidTechs(researchedTechs, connection);
+        return await GetValidTechs(researchedTechs);
 
     }
 
     public async Task<HashSet<Technology>> GetValidTechsForCompany(Guid companyId, TechField techField)
     {
-        await using var connection = await Db.Get();
         HashSet<Technology> researchedTechs = await GetCompanyResearchedTechsInField(companyId, techField);
-        return await GetValidTechs(researchedTechs, connection);
+        return await GetValidTechs(researchedTechs);
     }
 
     public async Task<HashSet<Technology>> GetCompanyResearchedTechs(Guid companyId)
@@ -206,7 +204,7 @@ public partial class ResearchService
     private async Task SetCompanyOverflow(Guid companyId,int overflow ,NpgsqlConnection connection)
     {
         await connection.QueryAsync(
-            "UPDATE company_research_meta SET pointoverflow = @newoverflow " +
+            "UPDATE company_research_data SET pointoverflow = @newoverflow " +
             "WHERE id = @id",
             new{id = companyId, newoverflow = overflow}
         );
@@ -215,12 +213,12 @@ public partial class ResearchService
     private async Task<int> GetAndClearCompanyOverflow(Guid companyId, NpgsqlConnection connection)
     {
         var metadata = await connection.QuerySingleOrDefaultAsync<CompanyResearchMetaData>(
-            "SELECT * FROM company_research_meta WHERE id = @id ",
+            "SELECT * FROM company_research_data WHERE id = @id ",
             new{id = companyId}
             );
         var overflow = metadata.PointOverflow;
         await connection.QueryAsync(
-            "UPDATE company_research_meta SET pointoverflow = 0 " +
+            "UPDATE company_research_data SET pointoverflow = 0 " +
             "WHERE id = @id",
             new{id = companyId}
         );

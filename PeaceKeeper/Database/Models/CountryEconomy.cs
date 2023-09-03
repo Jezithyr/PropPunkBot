@@ -7,7 +7,7 @@ public record CountryEconomyRaw(
     float SalesTax,
     float CorporateTaxRate,
     float NationalDebt,
-    float NationalUpkeep,
+    float GeneralUpkeep,
     float NationalFunds,
     float AlternativeIncome
 );
@@ -18,7 +18,7 @@ public record CountryEconomy(
     float SalesTax,
     float CorporateTaxRate,
     float NationalDebt,
-    float NationalUpkeep,
+    float GeneralUpkeep,
     float NationalFunds,
     float AlternativeIncome
 );

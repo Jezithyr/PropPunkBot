@@ -7,14 +7,14 @@ namespace PeaceKeeper.Services;
 
 public sealed class CountryStatsService : PeacekeeperServiceBase
 {
-    public async Task<CountryStats?> GetCountryStats(Guid countryId)
+    public async Task<CountryStats?> GetCountryStats(Country country)
     {
         await using var connection = await Db.Get();
         var users = await connection.QueryAsync<CountryStatsRaw, Country, CountryStats>(
             "SELECT * FROM country_stats LEFT JOIN countries ON countries.id = country_stats.id " +
             "WHERE country_stats.id = @id",
-            (old, country) => new CountryStats(
-                country,
+            (old, newcountry) => new CountryStats(
+                newcountry,
                 old.Population,
                 old.Happiness,
                 old.FertilityMod,
@@ -22,15 +22,15 @@ public sealed class CountryStatsService : PeacekeeperServiceBase
                 old.EducationIndex,
                 old.GdpPerCapMultiplier,
                 old.Urbanization
-            ), new {id = countryId});
+            ), new {id = country.Id});
        return users?.SingleOrDefault();
     }
 
-    public async Task<bool> UpdateCountryStats(Guid countryId, int? population, float? happiness, float? fertility,
+    public async Task<bool> UpdateCountryStats(Country country, int? population, float? happiness, float? fertility,
         float? unemployment, float? educationIndex, float? gdpPerCapMultiplier, float? urbanization)
     {
         await using var connection = await Db.Get();
-        var stats = await GetCountryStats(countryId);
+        var stats = await GetCountryStats(country);
         if (stats == null) return false;
         var newStats = new StatData(population, happiness, fertility, unemployment, educationIndex, gdpPerCapMultiplier, urbanization);
         newStats.Population ??= stats.Population;
@@ -45,7 +45,7 @@ public sealed class CountryStatsService : PeacekeeperServiceBase
                                     "urbanization = @urb where id = @id",
             new
             {
-            id = countryId, pop = newStats.Population, hap = newStats.Happiness,
+            id = country.Id, pop = newStats.Population, hap = newStats.Happiness,
             fert = newStats.FertilityMod, unemp = newStats.UnEmployment, edi = newStats.EducationIndex,
             gdp = newStats.GdpPerCapMultiplier, urb = urbanization
         });

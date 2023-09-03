@@ -7,20 +7,20 @@ namespace PeaceKeeper.Services;
 
 public partial class ResearchService
 {
-    public async Task<HashSet<Technology>> GetValidTechsForCompany(Guid companyId)
+    public async Task<HashSet<Technology>> GetValidTechsFor(Company company)
     {
-        HashSet<Technology> researchedTechs = await GetCompanyResearchedTechs(companyId);
+        HashSet<Technology> researchedTechs = await GetResearchedTechs(company);
         return await GetValidTechs(researchedTechs);
 
     }
 
-    public async Task<HashSet<Technology>> GetValidTechsForCompany(Guid companyId, TechField techField)
+    public async Task<HashSet<Technology>> GetValidTechsFor(Company company, TechField techField)
     {
-        HashSet<Technology> researchedTechs = await GetCompanyResearchedTechsInField(companyId, techField);
+        HashSet<Technology> researchedTechs = await GetResearchedTechsInField(company, techField);
         return await GetValidTechs(researchedTechs);
     }
 
-    public async Task<HashSet<Technology>> GetCompanyResearchedTechs(Guid companyId)
+    public async Task<HashSet<Technology>> GetResearchedTechs(Company company)
     {
         await using var connection = await Db.Get();
         var completedProgress = await connection.QueryAsync
@@ -31,13 +31,13 @@ public partial class ResearchService
                 "LEFT JOIN technologies ON technologies.id = company_research_progress.techid " +
                 "WHERE id = @id " +
                 "AND completion >= 1",
-                (progressData, company, tech) => new CompanyResearchProgress(
-                    company,
+                (progressData, newcompany, tech) => new CompanyResearchProgress(
+                    newcompany,
                     tech,
                     progressData.Completion
                 ), new
                 {
-                    id = companyId
+                    id = company.Id
                 }
             );
 
@@ -51,7 +51,7 @@ public partial class ResearchService
         return techlist;
     }
 
-    public async Task<HashSet<Technology>> GetCompanyResearchedTechsInField(Guid companyId, TechField field)
+    public async Task<HashSet<Technology>> GetResearchedTechsInField(Company company, TechField field)
     {
         await using var connection = await Db.Get();
         var completedProgress = await connection.QueryAsync
@@ -61,13 +61,13 @@ public partial class ResearchService
                 "LEFT JOIN companies ON companies.id = company_research_progress.id " +
                 "LEFT JOIN technologies ON technologies.id = company_research_progress.techid " +
                 "WHERE id = @id AND completion >= 1 AND field = @techfield",
-                (progressData, company, tech) => new CompanyResearchProgress(
-                    company,
+                (progressData, newcompany, tech) => new CompanyResearchProgress(
+                    newcompany,
                     tech,
                     progressData.Completion
                 ), new
                 {
-                    id = companyId,
+                    id = company.Id,
                     techfield = field
                 }
             );
@@ -82,20 +82,20 @@ public partial class ResearchService
         return techlist;
     }
 
-    public async Task<decimal> GetCompanyTechnologyProgress(Guid companyId, Guid techId)
+    public async Task<decimal> GetTechnologyProgress(Company company, Technology tech)
     {
         await using var connection = await Db.Get();
         var completedProgress = await connection.QuerySingleOrDefaultAsync<CompanyResearchProgressRaw>(
             "SELECT * FROM company_research_progress WHERE id = @id " +
             "AND techid = @tech",
-            new {id = companyId, tech = techId}
+            new {id = company.Id, tech = tech.Id}
         );
         if (completedProgress == null)
             return 0;
         return completedProgress.Completion;
     }
 
-     public async Task<Dictionary<int,CompanyResearchSlot>?> GetCompanyResearchSlots(Guid companyId)
+     public async Task<Dictionary<int,CompanyResearchSlot>?> GetResearchSlots(Company company)
     {
         await using var connection = await Db.Get();
         var researchQueues = await connection.QueryAsync
@@ -104,11 +104,11 @@ public partial class ResearchService
                 "LEFT JOIN companies ON companies.id = company_research_slots.id " +
                 "LEFT JOIN technologies ON technologies.id = company_research_slots.techid " +
                 "WHERE company_research_slots.id = @id",
-                (researchData, company, techid) => new CompanyResearchSlot(
-                    company,
+                (researchData, newcompany, techid) => new CompanyResearchSlot(
+                    newcompany,
                     researchData.SlotNumber,
                     techid
-                ), new {id = companyId});
+                ), new {id = company.Id});
         if (researchQueues == null)
             return null;
         Dictionary<int,CompanyResearchSlot> slots = new();
@@ -119,7 +119,7 @@ public partial class ResearchService
         return slots;
     }
 
-    public async Task<CompanyResearchSlot?> GetCompanyResearchSlot(Guid companyId, int slotNumber)
+    public async Task<CompanyResearchSlot?> GetResearchSlot(Guid companyId, int slotNumber)
     {
         await using var connection = await Db.Get();
         var researchSlots = await connection.QueryAsync
@@ -141,14 +141,14 @@ public partial class ResearchService
         return researchSlots == null ? null : researchSlots.SingleOrDefault() ?? null;
     }
 
-    public async Task<int> UpdateCompanyTech(Guid companyId, Technology tech, int points)
+    public async Task<int> UpdateTech(Company company, Technology tech, int points)
     {
         await using var connection = await Db.Get();
         int overflow = points;
         var researchProgress = await connection.QuerySingleOrDefaultAsync<CompanyResearchProgress>(
             "SELECT * FROM company_research_progress WHERE id = @id " +
             "AND techid = @techId",
-            new {id = companyId, techid = tech.Id}
+            new {id = company.Id, techid = tech.Id}
         );
         if (researchProgress == null || researchProgress.Completion >= 1)
             return overflow;
@@ -162,15 +162,15 @@ public partial class ResearchService
         await connection.QueryAsync(
             "UPDATE company_research_progress SET  completion = @percentage " +
             "WHERE id = @id AND techid = @techid",
-            new { id = companyId, techid = tech.Id, percentage = completion}
+            new { id = company.Id, techid = tech.Id, percentage = completion}
         );
         return overflow;
     }
 
-    public async Task<bool> UpdateCompanyResearch(Guid companyId, int researchPoints)
+    public async Task<bool> UpdateResearch(Company company, int researchPoints)
     {
         await using var connection = await Db.Get();
-        var currentResearchSlots = await GetCompanyResearchSlots(companyId);
+        var currentResearchSlots = await GetResearchSlots(company);
         if (currentResearchSlots == null)
             return false;
         //get all slots that have techs assigned
@@ -184,43 +184,43 @@ public partial class ResearchService
         if (activeSlots.Count == 0)
         {
             //dump all our research points into the point overflow pool if we don't have any research
-            await SetCompanyOverflow(companyId, researchPoints, connection);
+            await SetOverflow(company, researchPoints, connection);
             return true;
         }
         var researchPerSlot = (int) MathF.Ceiling((float) researchPoints / activeSlots.Count);
-        var overflow = await GetAndClearCompanyOverflow(companyId, connection);
+        var overflow = await GetAndClearOverflow(company, connection);
         foreach (var slotData in activeSlots)
         {
-            overflow = await UpdateCompanyTech(companyId, slotData.Tech!, researchPerSlot + overflow);
+            overflow = await UpdateTech(company, slotData.Tech!, researchPerSlot + overflow);
         }
 
         if (overflow > 0)
         {
-            await SetCompanyOverflow(companyId, overflow, connection);
+            await SetOverflow(company, overflow, connection);
         }
         return true;
     }
 
-    private async Task SetCompanyOverflow(Guid companyId,int overflow ,NpgsqlConnection connection)
+    private async Task SetOverflow(Company company,int overflow ,NpgsqlConnection connection)
     {
         await connection.QueryAsync(
             "UPDATE company_research_data SET pointoverflow = @newoverflow " +
             "WHERE id = @id",
-            new{id = companyId, newoverflow = overflow}
+            new{id = company.Id, newoverflow = overflow}
         );
     }
 
-    private async Task<int> GetAndClearCompanyOverflow(Guid companyId, NpgsqlConnection connection)
+    private async Task<int> GetAndClearOverflow(Company company, NpgsqlConnection connection)
     {
         var metadata = await connection.QuerySingleOrDefaultAsync<CompanyResearchMetaData>(
             "SELECT * FROM company_research_data WHERE id = @id ",
-            new{id = companyId}
+            new{id = company.Id}
             );
         var overflow = metadata.PointOverflow;
         await connection.QueryAsync(
             "UPDATE company_research_data SET pointoverflow = 0 " +
             "WHERE id = @id",
-            new{id = companyId}
+            new{id = company.Id}
         );
         return overflow;
     }

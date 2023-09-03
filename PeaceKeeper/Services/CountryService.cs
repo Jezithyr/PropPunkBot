@@ -47,36 +47,28 @@ public class CountryService : PeacekeeperServiceBase
             new {code = countryCode});
     }
 
-    public async Task<bool> AssignUser(long userId, Guid countryId, bool makeOwner = true)
+    public async Task<bool> AssignUser(long userId, Country country, bool makeOwner = true)
     {
         await using var connection = await Db.Get();
-        var countryData = await GetCountry(countryId);
         var userData = await Users.Get(userId);
-        if (countryData == null || userData == null) return false;
+        if ( userData == null) return false;
         if (makeOwner)
         {
             await connection.QueryAsync(
                 "UPDATE users SET leader = false WHERE country = @countryid",
-                new {countryid = countryId});
+                new {countryid = country.Id});
         }
         await connection.QueryAsync<UserRaw>(
-            "UPDATE users SET country = @country, leader = @leader WHERE id = @id",
-            new {id = userId, country = countryId, leader = makeOwner});
+            "UPDATE users SET country = @countryid, leader = @leader WHERE id = @id",
+            new {id = userId, countryid = country.Id, leader = makeOwner});
         return true;
     }
 
-    public async Task<bool> AssignUser(IUser user, Guid countryId, bool makeOwner = true)
+    public async Task<bool> AssignUser(IUser user, Country country, bool makeOwner = true)
     {
-        return await AssignUser((long)user.Id, countryId, makeOwner);
+        return await AssignUser((long)user.Id, country, makeOwner);
     }
 
-    public async Task<bool> AssignUser(IUser user, string countryName, bool makeOwner = true)
-    {
-        await using var connection = await Db.Get();
-        var countryData = await GetCountry(countryName);
-        if (countryData == null) return false;
-        return await AssignUser(user, countryData.Id, makeOwner);
-    }
 
     public async Task<bool> CreateCountry(string countryName, string countryCode, long? ownerId = null)
     {
@@ -90,9 +82,10 @@ public class CountryService : PeacekeeperServiceBase
         var countryId = await connection.QuerySingleAsync<Guid>(
             "INSERT INTO countries (name, shortname) VALUES (@name,@shortname) ON CONFLICT DO NOTHING RETURNING id",
             new {name = countryName, shortname = countryCode});
-        if (ownerId != null)
+        var newCountry = await GetCountry(countryId);
+        if (ownerId != null && newCountry != null)
         {
-            return await AssignUser(ownerId.Value, countryId, true);
+            return await AssignUser(ownerId.Value, newCountry, true);
         }
         return true;
     }

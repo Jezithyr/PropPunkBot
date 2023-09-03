@@ -34,21 +34,20 @@ public class CompanyService : PeacekeeperServiceBase
             new {code = companyTicker});
     }
 
-    public async Task<bool> AssignUser(long userId, Guid companyId, bool makeOwner = true)
+    public async Task<bool> AssignUser(long userId, Company company, bool makeOwner = true)
     {
         await using var connection = await Db.Get();
-        var companyData = await GetCompany(companyId);
         var userData = await Users.Get(userId);
-        if (companyData == null || userData == null) return false;
+        if (userData == null) return false;
         if (makeOwner)
         {
             await connection.QueryAsync(
                 "UPDATE users SET ceo = false WHERE company = @companyid",
-                new {companyid = companyId});
+                new {companyid = company.Id});
         }
         await connection.QueryAsync<UserRaw>(
             "UPDATE users SET company = @company, ceo = @ceo WHERE id = @id",
-            new {id = userId, company = companyId, ceo = makeOwner});
+            new {id = userId, company = company.Id, ceo = makeOwner});
         return true;
     }
 
@@ -65,9 +64,10 @@ public class CompanyService : PeacekeeperServiceBase
         var companyId = await connection.QuerySingleAsync<Guid>(
             "INSERT INTO companies (name, shortname) VALUES (@name,@shortname) ON CONFLICT DO NOTHING RETURNING id",
             new {name = companyName, shortname = companyTicker});
-        if (ownerId != null)
+        var newCompany = await GetCompany(companyId);
+        if (ownerId != null && newCompany != null)
         {
-            return await AssignUser(ownerId.Value, companyId, true);
+            return await AssignUser(ownerId.Value, newCompany, true);
         }
         return true;
     }

@@ -71,7 +71,7 @@ public partial class AdminModule
             await FollowupAsync($"Company with name: {companyName} does not exist!");
             return;
         }
-        await _company.AssignUser((long) user.Id, company.Id);
+        await _company.AssignUser((long) user.Id, company);
         if (makeOwner)
         {
             await FollowupAsync($"User: {user.Username} is now the owner of {companyName}!");

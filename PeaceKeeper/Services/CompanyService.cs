@@ -10,12 +10,12 @@ namespace PeaceKeeper.Services;
 public class CompanyService : PeacekeeperServiceBase
 {
 
-    public async Task<Company?> GetCompany(Guid companyId)
+    public async Task<Company?> GetCompany(Company company)
     {
         await using var connection = await Db.Get();
         return await connection.QuerySingleOrDefaultAsync<Company>(
             "SELECT * FROM companies WHERE id = @id LIMIT 1",
-            new {id = companyId});
+            new {id = company.Id});
     }
 
     public async Task<Company?> GetCompany(string companyName)
@@ -24,6 +24,19 @@ public class CompanyService : PeacekeeperServiceBase
         return await connection.QuerySingleOrDefaultAsync<Company>(
             "SELECT * FROM companies WHERE name = @name LIMIT 1",
             new {name = companyName});
+    }
+
+    public async Task<List<Company>> GetAllCompanies()
+    {
+        await using var connection = await Db.Get();
+        List<Company> output = new();
+        foreach (var company in  await connection.QueryAsync<Company>(
+                     "SELECT * FROM companies "))
+        {
+            if (company == null) continue;
+            output.Add(company);
+        }
+        return output;
     }
 
     public async Task<Company?> GetCompanyFromCode(string companyTicker)
@@ -64,7 +77,10 @@ public class CompanyService : PeacekeeperServiceBase
         var companyId = await connection.QuerySingleAsync<Guid>(
             "INSERT INTO companies (name, shortname) VALUES (@name,@shortname) ON CONFLICT DO NOTHING RETURNING id",
             new {name = companyName, shortname = companyTicker});
-        var newCompany = await GetCompany(companyId);
+        var newcomp = await connection.QuerySingleOrDefaultAsync<Company>(
+            "SELECT * FROM companies WHERE name = @name LIMIT 1",
+            new {name = companyName});
+        var newCompany = await GetCompany(newcomp);
         if (ownerId != null && newCompany != null)
         {
             return await AssignUser(ownerId.Value, newCompany, true);
@@ -72,15 +88,15 @@ public class CompanyService : PeacekeeperServiceBase
         return true;
     }
 
-    public async Task<bool> RemoveCompany(Guid companyId)
+    public async Task<bool> RemoveCompany(Company company)
     {
         await using var connection = await Db.Get();
         var companyData = await connection.QuerySingleOrDefaultAsync<Company>(
             "SELECT * FROM companies WHERE id = @id LIMIT 1",
-            new {id = companyId});
+            new {id = company.Id});
         if (companyData == null)
             return false;
-        await connection.QueryAsync("DELETE FROM companies where id = @id", new {id = companyId});
+        await connection.QueryAsync("DELETE FROM companies where id = @id", new {id = company.Id});
         return true;
     }
 

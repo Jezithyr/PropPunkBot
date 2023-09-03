@@ -6,7 +6,8 @@ public record GlobalSettingsRaw(
     float AotScaleFactor,
     int CountryResearchSlotCount,
     int CompanyResearchSlotCount,
-    long OfficialServerId
+    long OfficialServerId,
+    int MoneyPerTechPoint
     );
 
 public record GlobalSettings(
@@ -14,7 +15,8 @@ public record GlobalSettings(
     float AotScaleFactor,
     int LastCountryResearchSlotIndex,
     int LastCompanyResearchSlotIndex,
-    long OfficialServerId
+    long OfficialServerId,
+    int MoneyPerTechPoint
 )
 {
     public GlobalSettings(GlobalSettingsRaw raw) :
@@ -22,7 +24,8 @@ public record GlobalSettings(
             raw.AotScaleFactor, //shift research slot count to array notation
             raw.CountryResearchSlotCount - 1,
             raw.CompanyResearchSlotCount - 1,
-            raw.OfficialServerId
+            raw.OfficialServerId,
+            raw.MoneyPerTechPoint
         )
     {
     }

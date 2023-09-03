@@ -5,22 +5,22 @@ namespace PeaceKeeper.Services;
 
 public partial class EconomyService : PeacekeeperServiceBase
 {
-    private Dictionary<Country,Dictionary<string, float>> _upkeepSources = new();
+    private Dictionary<Country,Dictionary<string, float>> _countryUpkeepSources = new();
 
     public async Task<int> GetGdpPerCapita(Country country)
     {
         var worldState = await WorldState.Get();
         var countryStats = await _countryStats.GetCountryStats(country);
         if (countryStats == null) return -1;
-        return  CalculateCountryGdpPerCapita(worldState.WorldAverageGdp, countryStats.GdpPerCapMultiplier);
+        return  CalculateGdpPerCapita(worldState.WorldAverageGdp, countryStats.GdpPerCapMultiplier);
     }
 
     public async Task<CountryEconomy?> GetEconomy(Country country)
     {
         await using var connection = await Db.Get();
         var users = await connection.QueryAsync<CountryEconomyRaw, Country, CountryEconomy>(
-            "SELECT * FROM country_economies LEFT JOIN countries ON countries.id = country_economies.id " +
-            "WHERE country_economies.id = @id",
+            "SELECT * FROM country_economy LEFT JOIN countries ON countries.id = country_economy.id " +
+            "WHERE country_economy.id = @id",
             (old, foundcountry) => new CountryEconomy(
                 foundcountry,
                 old.IndividualTaxRate,
@@ -28,71 +28,80 @@ public partial class EconomyService : PeacekeeperServiceBase
                 old.CorporateTaxRate,
                 old.NationalDebt,
                 old.GeneralUpkeep,
-                old.NationalFunds,
+                old.Funds,
                 old.AlternativeIncome
             ), new {id = country.Id});
         return users?.SingleOrDefault();
     }
 
-    public int CalculateCountryGdpPerCapita(int worldAverageGdp, float modifier)
+    public int CalculateGdpPerCapita(int worldAverageGdp, float modifier)
     {
         return (int) MathF.Ceiling(worldAverageGdp * modifier);
     }
 
-    public async Task<int> GetCountryMaxPopIncome(Country country)
+    public async Task<int> GetMaxPopIncome(Country country)
     {
         var worldState = await WorldState.Get();
         var countryStats = await _countryStats.GetCountryStats(country);
         if (countryStats == null) return -1;
-        var gdp = CalculateCountryGdpPerCapita(worldState.WorldAverageGdp, countryStats.GdpPerCapMultiplier);
+        var gdp = CalculateGdpPerCapita(worldState.WorldAverageGdp, countryStats.GdpPerCapMultiplier);
         var workingPop = (int)(countryStats.Population -
                          MathF.Ceiling(countryStats.Population * countryStats.UnEmployment));
         return gdp * workingPop;
     }
 
-    public async Task<int> GetCountryGrossIncome(Country country)
+    public async Task<int> GetGrossIncome(Country country)
     {
         var worldState = await WorldState.Get();
         var countryStats = await _countryStats.GetCountryStats(country);
         var countryEcon = await GetEconomy(country);
         if (countryStats == null || countryEcon == null) return -1;
-        var gdp = CalculateCountryGdpPerCapita(worldState.WorldAverageGdp, countryStats.GdpPerCapMultiplier);
+        var gdp = CalculateGdpPerCapita(worldState.WorldAverageGdp, countryStats.GdpPerCapMultiplier);
         var workingPop = (int)(countryStats.Population -
                                MathF.Ceiling(countryStats.Population * countryStats.UnEmployment));
         return (int)MathF.Ceiling((countryEcon.IndividualTaxRate * gdp * workingPop) + countryEcon.AlternativeIncome);
     }
 
-    public async Task<int> GetCountryNetIncome(Country country)
+    public async Task<int> GetNetIncome(Country country)
     {
-        var gross = await GetCountryGrossIncome(country);
+        var gross = await GetGrossIncome(country);
         var countryEcon = await GetEconomy(country);
         if ( countryEcon == null) return -1;
         return (int)MathF.Ceiling(gross
-            + countryEcon.AlternativeIncome - gross*(countryEcon.GeneralUpkeep+GetUpkeepFromSources(country)));
+            + countryEcon.AlternativeIncome - await GetUpkeep(country, gross, countryEcon));
+    }
+
+    public async Task<int> GetUpkeep(Country country, int? gross = null, CountryEconomy? countryEcon = null)
+    {
+        gross ??= await GetGrossIncome(country);
+        countryEcon ??= await GetEconomy(country);
+        if ( countryEcon == null) return -1;
+        var fixedUpkeep = countryEcon.GeneralUpkeep + await _research.GetResearchBudget(country);
+        return (int)MathF.Ceiling(gross.Value * (GetUpkeepFromSources(country) + fixedUpkeep));
     }
 
     public bool AddUpkeepSource(Country country, string sourceName, float upkeepPercent)
     {
-        return !_upkeepSources.TryGetValue(country, out var sources)
-            ? _upkeepSources.TryAdd(country, new Dictionary<string, float>() {{sourceName, upkeepPercent}})
+        return !_countryUpkeepSources.TryGetValue(country, out var sources)
+            ? _countryUpkeepSources.TryAdd(country, new Dictionary<string, float>() {{sourceName, upkeepPercent}})
             : sources.TryAdd(sourceName, upkeepPercent);
     }
 
     public bool RemoveUpkeepSource(Country country, string sourceName)
     {
-        return _upkeepSources.TryGetValue(country, out var sources) && sources.Remove(sourceName);
+        return _countryUpkeepSources.TryGetValue(country, out var sources) && sources.Remove(sourceName);
     }
 
     public bool RemoveAllUpkeepSources(Country country)
     {
-        return _upkeepSources.Remove(country);
+        return _countryUpkeepSources.Remove(country);
     }
 
 
     private float GetUpkeepFromSources(Country country)
     {
         float upkeep = 0;
-        if (!_upkeepSources.TryGetValue(country, out var upkeepSources)) return upkeep;
+        if (!_countryUpkeepSources.TryGetValue(country, out var upkeepSources)) return upkeep;
         foreach (var (_,upkeepPercent) in upkeepSources)
         {
             upkeep += upkeepPercent;
@@ -101,27 +110,27 @@ public partial class EconomyService : PeacekeeperServiceBase
     }
 
 
-    public async Task SetCountryGeneralUpkeep(Country country, float newpkeepPercent)
+    public async Task SetGeneralUpkeep(Country country, float newupkeepPercent)
     {
         await using var connection = await Db.Get();
         await connection.QueryAsync(
-            "UPDATE country_economies set generalupkeep = @upkeep where id = @id",
-            new {id = country.Id,  upkeep = newpkeepPercent});
+            "UPDATE country_economy set generalupkeep = @upkeep where id = @id",
+            new {id = country.Id,  upkeep = newupkeepPercent});
     }
 
     public async Task AddCountryGeneralUpkeep(Country country, float newpkeepPercent)
     {
         var countryEcon = await GetEconomy(country);
         if (countryEcon == null) return;
-        await SetCountryGeneralUpkeep(country, newpkeepPercent + countryEcon.GeneralUpkeep);
+        await SetGeneralUpkeep(country, newpkeepPercent + countryEcon.GeneralUpkeep);
     }
 
-    public async Task UpdateCountryFunds(Country country)
+    public async Task UpdateFunds(Country country)
     {
-        var net = await GetCountryNetIncome(country);
+        var net = await GetNetIncome(country);
         var countryEcon = await GetEconomy(country);
         if (countryEcon == null) return;
-        var newFunds = countryEcon.NationalFunds + net;
+        var newFunds = countryEcon.Funds + net;
         var debt = countryEcon.NationalDebt;
         if (newFunds < 0)
         {
@@ -130,14 +139,18 @@ public partial class EconomyService : PeacekeeperServiceBase
         }
         await using var connection = await Db.Get();
         await connection.QueryAsync(
-            "UPDATE country_economies set nationaldebt = @ndebt, nationalfunds = @nfunds where id = @id",
+            "UPDATE country_economy set nationaldebt = @ndebt, funds = @nfunds where id = @id",
             new {id = country.Id, ndebt = debt, nfunds = newFunds});
     }
     private async Task UpdateCountries()
     {
+        var moneyPerTech = (await Settings.GetSettings()).MoneyPerTechPoint;
         foreach (var country in await _country.GetAllCountries())
         {
-            await UpdateCountryFunds(country);
+            await UpdateFunds(country);
+            var researchSpending = await _research.GetResearchBudget(country) * await GetGrossIncome(country);
+            await _research.UpdateResearch(country,
+                (int)MathF.Ceiling(researchSpending*moneyPerTech));
         }
     }
 

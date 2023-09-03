@@ -6,10 +6,10 @@ public record CountryEconomyRaw(
     float IndividualTaxRate,
     float SalesTax,
     float CorporateTaxRate,
-    float NationalDebt,
+    long NationalDebt,
     float GeneralUpkeep,
-    float NationalFunds,
-    float AlternativeIncome
+    long Funds,
+    long AlternativeIncome
 );
 
 public record CountryEconomy(
@@ -17,8 +17,8 @@ public record CountryEconomy(
     float IndividualTaxRate,
     float SalesTax,
     float CorporateTaxRate,
-    float NationalDebt,
+    long NationalDebt,
     float GeneralUpkeep,
-    float NationalFunds,
-    float AlternativeIncome
+    long Funds,
+    long AlternativeIncome
 );

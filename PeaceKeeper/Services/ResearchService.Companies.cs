@@ -167,6 +167,17 @@ public partial class ResearchService
         return overflow;
     }
 
+    public async Task<float> GetResearchBudget(Company company)
+    {
+        await using var connection = await Db.Get();
+        var metadata = await connection.QuerySingleOrDefaultAsync<CompanyResearchMetaDataRaw>(
+            "SELECT * FROM company_research_data " +
+            "WHERE id = @id",
+            new{id = company.Id}
+        );
+        return metadata.ResearchBudget;
+    }
+
     public async Task<bool> UpdateResearch(Company company, int researchPoints)
     {
         await using var connection = await Db.Get();
@@ -184,11 +195,11 @@ public partial class ResearchService
         if (activeSlots.Count == 0)
         {
             //dump all our research points into the point overflow pool if we don't have any research
-            await SetOverflow(company, researchPoints, connection);
+            await SetOverflow(company, researchPoints);
             return true;
         }
         var researchPerSlot = (int) MathF.Ceiling((float) researchPoints / activeSlots.Count);
-        var overflow = await GetAndClearOverflow(company, connection);
+        var overflow = await GetAndClearOverflow(company);
         foreach (var slotData in activeSlots)
         {
             overflow = await UpdateTech(company, slotData.Tech!, researchPerSlot + overflow);
@@ -196,13 +207,14 @@ public partial class ResearchService
 
         if (overflow > 0)
         {
-            await SetOverflow(company, overflow, connection);
+            await SetOverflow(company, overflow);
         }
         return true;
     }
 
-    private async Task SetOverflow(Company company,int overflow ,NpgsqlConnection connection)
+    private async Task SetOverflow(Company company,int overflow)
     {
+        await using var connection = await Db.Get();
         await connection.QueryAsync(
             "UPDATE company_research_data SET pointoverflow = @newoverflow " +
             "WHERE id = @id",
@@ -210,9 +222,10 @@ public partial class ResearchService
         );
     }
 
-    private async Task<int> GetAndClearOverflow(Company company, NpgsqlConnection connection)
+    private async Task<int> GetAndClearOverflow(Company company)
     {
-        var metadata = await connection.QuerySingleOrDefaultAsync<CompanyResearchMetaData>(
+        await using var connection = await Db.Get();
+        var metadata = await connection.QuerySingleOrDefaultAsync<CompanyResearchMetaDataRaw>(
             "SELECT * FROM company_research_data WHERE id = @id ",
             new{id = company.Id}
             );

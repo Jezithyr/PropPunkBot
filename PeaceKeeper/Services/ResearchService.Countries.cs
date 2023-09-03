@@ -7,7 +7,7 @@ namespace PeaceKeeper.Services;
 
 public partial class ResearchService
 {
-    public async Task<HashSet<Technology>> GetCountryResearchedTechs(Guid countryId)
+    public async Task<HashSet<Technology>> GetResearchedTechs(Country country)
     {
         await using var connection = await Db.Get();
         var completedProgress = await connection.QueryAsync
@@ -18,14 +18,14 @@ public partial class ResearchService
             "LEFT JOIN technologies ON technologies.id = country_research_progress.techid " +
             "WHERE id = @id " +
             "AND completion >= 1",
-            (progressData, country, tech) => new CountryResearchProgress(
-                country,
+            (progressData, newcountry, tech) => new CountryResearchProgress(
+                newcountry,
                 tech,
                 progressData.Completion
             ),
             new
             {
-                id = countryId
+                id = country.Id
             }
         );
 
@@ -39,7 +39,7 @@ public partial class ResearchService
         return techlist;
     }
 
-    public async Task<HashSet<Technology>> GetCountryResearchedTechsInField(Guid countryId, TechField field)
+    public async Task<HashSet<Technology>> GetResearchedTechsInField(Country country, TechField field)
     {
         await using var connection = await Db.Get();
         var completedProgress = await connection.QueryAsync
@@ -49,14 +49,14 @@ public partial class ResearchService
                 "LEFT JOIN countries ON countries.id = country_research_progress.id " +
                 "LEFT JOIN technologies ON technologies.id = country_research_progress.techid " +
                 "WHERE id = @id AND completion >= 1 AND field = @techfield",
-                (progressData, country, tech) => new CountryResearchProgress(
-                    country,
+                (progressData, newcountry, tech) => new CountryResearchProgress(
+                    newcountry,
                     tech,
                     progressData.Completion
                 ),
                 new
                 {
-                    id = countryId,
+                    id = country.Id,
                     techfield = field
                 }
             );
@@ -71,20 +71,20 @@ public partial class ResearchService
         return techlist;
     }
 
-    public async Task<decimal> GetCountryTechnologyProgress(Guid countryId, Guid techId)
+    public async Task<decimal> GetTechnologyProgress(Country country, Technology tech)
     {
         await using var connection = await Db.Get();
         var completedProgress = await connection.QuerySingleOrDefaultAsync<CountryResearchProgressRaw>(
             "SELECT * FROM country_research_progress WHERE id = @id " +
             "AND techid = @tech",
-            new {id = countryId, tech = techId}
+            new {id = country.Id, tech = tech.Id}
         );
         if (completedProgress == null)
             return 0;
         return completedProgress.Completion;
     }
 
-    public async Task<Dictionary<int,CountryResearchSlot>?> GetCountryResearchSlots(Guid countryId)
+    public async Task<Dictionary<int,CountryResearchSlot>?> GetResearchSlots(Country country)
     {
         await using var connection = await Db.Get();
         var researchQueues = await connection.QueryAsync
@@ -97,7 +97,7 @@ public partial class ResearchService
                     countryid,
                     researchData.SlotNumber,
                     techid
-                ), new {id = countryId});
+                ), new {id = country});
         if (researchQueues == null)
             return null;
         Dictionary<int,CountryResearchSlot> slots = new();
@@ -108,7 +108,7 @@ public partial class ResearchService
         return slots;
     }
 
-    public async Task<CountryResearchSlot?> GetCountryResearchSlot(Guid countryId, int slotNumber)
+    public async Task<CountryResearchSlot?> GetCountryResearchSlot(Country country, int slotNumber)
     {
         await using var connection = await Db.Get();
         var researchSlots = await connection.QueryAsync
@@ -118,26 +118,26 @@ public partial class ResearchService
                 "LEFT JOIN technologies ON technologies.id = country_research_slots.techid " +
                 "WHERE country_research_slots.id = @id " +
                 "AND country_research_slots.slotnumber = @slotnumber",
-                (researchData, country, techid) => new CountryResearchSlot(
-                    country,
+                (researchData, newcountry, techid) => new CountryResearchSlot(
+                    newcountry,
                     researchData.SlotNumber,
                     techid),
                 new
                     {
-                        id = countryId,
+                        id = country.Id,
                         slotnumber = slotNumber
                     });
         return researchSlots == null ? null : researchSlots.SingleOrDefault() ?? null;
     }
 
-    public async Task<int> UpdateCountryTech(Guid countryId, Technology tech, int points)
+    public async Task<int> UpdateTech(Country country, Technology tech, int points)
     {
         await using var connection = await Db.Get();
         int overflow = points;
         var researchProgress = await connection.QuerySingleOrDefaultAsync<CountryResearchProgress>(
             "SELECT * FROM country_research_progress WHERE id = @id " +
             "AND techid = @techId",
-            new {id = countryId, techid = tech.Id}
+            new {id = country.Id, techid = tech.Id}
         );
         if (researchProgress == null || researchProgress.Completion >= 1)
             return overflow;
@@ -151,15 +151,15 @@ public partial class ResearchService
         await connection.QueryAsync(
             "UPDATE country_research_progress SET  completion = @percentage " +
             "WHERE id = @id AND techid = @techid",
-            new { id = countryId, techid = tech.Id, percentage = completion}
+            new { id = country.Id, techid = tech.Id, percentage = completion}
         );
         return overflow;
     }
 
-    public async Task<bool> UpdateCountryResearch(Guid countryId, int researchPoints)
+    public async Task<bool> UpdateResearch(Country country, int researchPoints)
     {
         await using var connection = await Db.Get();
-        var currentResearchSlots = await GetCountryResearchSlots(countryId);
+        var currentResearchSlots = await GetResearchSlots(country);
         if (currentResearchSlots == null)
             return false;
         //get all slots that have techs assigned
@@ -173,57 +173,70 @@ public partial class ResearchService
         if (activeSlots.Count == 0)
         {
             //dump all our research points into the point overflow pool if we don't have any research
-            await SetCountryOverflow(countryId, researchPoints, connection);
+            await SetOverflow(country, researchPoints);
             return true;
         }
         var researchPerSlot = (int) MathF.Ceiling((float) researchPoints / activeSlots.Count);
-        var overflow = await GetAndClearCountryOverflow(countryId, connection);
+        var overflow = await GetAndClearTechOverflow(country);
         foreach (var slotData in activeSlots)
         {
-            overflow = await UpdateCountryTech(countryId, slotData.Tech!, researchPerSlot + overflow);
+            overflow = await UpdateTech(country, slotData.Tech!, researchPerSlot + overflow);
         }
 
         if (overflow > 0)
         {
-            await SetCountryOverflow(countryId, overflow, connection);
+            await SetOverflow(country, overflow);
         }
         return true;
     }
 
-    private async Task SetCountryOverflow(Guid countryId,int overflow ,NpgsqlConnection connection)
+    public async Task<float> GetResearchBudget(Country country)
     {
+        await using var connection = await Db.Get();
+        var metadata = await connection.QuerySingleOrDefaultAsync<CountryResearchMetaData>(
+            "SELECT * FROM country_research_data " +
+            "WHERE id = @id",
+            new{id = country.Id}
+        );
+        return metadata.ResearchBudget;
+    }
+
+    private async Task SetOverflow(Country country,int overflow)
+    {
+        await using var connection = await Db.Get();
         await connection.QueryAsync(
             "UPDATE country_research_data SET pointoverflow = @newoverflow " +
             "WHERE id = @id",
-            new{id = countryId, newoverflow = overflow}
+            new{id = country.Id, newoverflow = overflow}
         );
     }
 
-    private async Task<int> GetAndClearCountryOverflow(Guid countryId, NpgsqlConnection connection)
+    private async Task<int> GetAndClearTechOverflow(Country country)
     {
-        var metadata = await connection.QuerySingleOrDefaultAsync<CountryResearchMetaData>(
+        await using var connection = await Db.Get();
+        var metadata = await connection.QuerySingleOrDefaultAsync<CountryResearchMetaDataRaw>(
             "SELECT * FROM country_research_data WHERE id = @id ",
-            new{id = countryId}
+            new{id = country.Id}
             );
         var overflow = metadata.PointOverflow;
         await connection.QueryAsync(
             "UPDATE country_research_data SET pointoverflow = 0 " +
             "WHERE id = @id",
-            new{id = countryId}
+            new{id = country.Id}
         );
         return overflow;
     }
 
-    public async Task<HashSet<Technology>> GetValidTechsForCountry(Guid countryId)
+    public async Task<HashSet<Technology>> GetValidTechs(Country country)
     {
-        HashSet<Technology> researchedTechs = await GetCountryResearchedTechs(countryId);
+        HashSet<Technology> researchedTechs = await GetResearchedTechs(country);
         return await GetValidTechs(researchedTechs);
 
     }
 
-    public async Task<HashSet<Technology>> GetValidTechsForCountry(Guid countryId, TechField techField)
+    public async Task<HashSet<Technology>> GetValidTechs(Country country, TechField techField)
     {
-        HashSet<Technology> researchedTechs = await GetCountryResearchedTechsInField(countryId, techField);
+        HashSet<Technology> researchedTechs = await GetResearchedTechsInField(country, techField);
         return await GetValidTechs(researchedTechs);
     }
 }

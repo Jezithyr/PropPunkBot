@@ -5,18 +5,24 @@ public record WorldStateRaw(
     string StartDate,
     int Year,
     int Quarter,
-    string CurrentDate
+    string CurrentDate,
+    int WorldGdp,
+    float WorldGdpGrowth,
+    float WorldFertility
     );
 
 public record WorldState(
     DateOnly StartDate,
     int Year,
     int Quarter,
-    DateOnly CurrentDate
+    DateOnly CurrentDate,
+    int WorldAverageGdp,
+    float WorldGdpGrowth,
+    float WorldFertility
 )
 {
     public WorldState(WorldStateRaw raw) : this(DateOnly.Parse(raw.StartDate), raw.Year, raw.Quarter,
-        DateOnly.Parse(raw.CurrentDate))
+        DateOnly.Parse(raw.CurrentDate), raw.WorldGdp, raw.WorldGdpGrowth, raw.WorldFertility)
     {
     }
 }

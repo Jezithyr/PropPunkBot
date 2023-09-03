@@ -8,36 +8,29 @@ namespace PeaceKeeper.Services;
 public sealed class WorldStateService : PeacekeeperCoreServiceBase
 {
     private readonly DbService _db;
-    private OnWorldTick? _onWorldTick = default;
-
+    private readonly List<(OnWorldTick,int)> _onWorldTickEvents = new ();
     public int YearsSinceStart { get; private set; }
     public int CurrentQuarter{ get; private set; }
-
     public delegate void OnWorldTick(int year, int quarter, DateOnly date);
-
     public async Task<WorldState> Get()
     {
         await using var connection = await _db.Get();
-
         var rawState = await connection.QuerySingleAsync<WorldStateRaw>(
             "SELECT * FROM world_state WHERE lock = 0 LIMIT 1");
         return new WorldState(rawState);
     }
-
     public async Task<DateOnly> GetCurrentTurnDate()
     {
         await using var connection = await _db.Get();
         var worldState = await Get();
         return worldState.CurrentDate;
     }
-
     public async Task<(int, int)> GetCurrentTurnDateQuarters()
     {
         await using var connection = await _db.Get();
         var worldState = await Get();
         return (worldState.Year, worldState.Quarter);
     }
-
     public async Task Tick(int numberOfTicks = 1)
     {
         await using var connection = await _db.Get();
@@ -60,19 +53,42 @@ public sealed class WorldStateService : PeacekeeperCoreServiceBase
         await connection.QuerySingleAsync<WorldState>(
             "UPDATE world_state SET year = @year, quarter = @quarter WHERE lock = 0",
             new {year = YearsSinceStart, quarter = CurrentQuarter});
-        _onWorldTick?.Invoke(YearsSinceStart, CurrentQuarter, currentDate);
+        await UpdateWorldGdp();
+        foreach (var tickEvent in _onWorldTickEvents)
+        {
+            tickEvent.Item1.Invoke(YearsSinceStart, CurrentQuarter, currentDate);
+        }
     }
 
-    public void RegisterTickEvent(OnWorldTick tickDelegate)
+    public async Task SetWorldGdp(int worldGdp)
     {
-        _onWorldTick += tickDelegate;
+        await using var connection = await _db.Get();
+        await connection.QuerySingleAsync<WorldState>(
+            "UPDATE world_state SET worldgdp = @gdp WHERE lock = 0",
+            new {gdp = worldGdp});
     }
 
-    public void RemoveTickEvent(OnWorldTick tickDelegate)
+    private async Task UpdateWorldGdp()
     {
-        _onWorldTick -= tickDelegate;
+        await using var connection = await _db.Get();
+        await connection.QuerySingleAsync<WorldState>(
+            "UPDATE world_state SET worldgdp = worldgdp + worldgdp * worldgdpgrowth WHERE lock = 0");
     }
 
+
+    public async Task SetWorldGdpGrowth(float newGrowth)
+    {
+        await using var connection = await _db.Get();
+        await connection.QuerySingleAsync<WorldState>(
+            "UPDATE world_state SET worldgdpgrowth = @growth WHERE lock = 0",
+            new {growth = newGrowth});
+    }
+
+
+    public void RegisterTickEvent(OnWorldTick tickDelegate, int priority = 10)
+    {
+        _onWorldTickEvents.Add((tickDelegate,priority));
+    }
     public WorldStateService(DiscordSocketClient client, DbService db) : base(client)
     {
         _db = db;

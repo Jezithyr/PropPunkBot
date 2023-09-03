@@ -1,11 +1,23 @@
 namespace PeaceKeeper.Database.Models;
 
-public record CountryStats(
+public record CountryStatsRaw(
     Guid CountryId,
-    long Gdp,
-    long NonCityPopulation,
-    float AverageIncomePq,
-    float PopulationDensity,
-    float Fertility,
-    float EducationLevel);
+    int Population,
+    float Happiness,
+    float FertilityMod,
+    float UnEmployment,
+    float EducationIndex,
+    float GdpPerCapMultiplier,
+    float Urbanization
+    );
 
+public record CountryStats(
+    Country Country,
+    int Population,
+    float Happiness,
+    float FertilityMod,
+    float UnEmployment,
+    float EducationIndex,
+    float GdpPerCapMultiplier,
+    float Urbanization
+);

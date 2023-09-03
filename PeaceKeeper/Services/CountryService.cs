@@ -25,6 +25,20 @@ public class CountryService : PeacekeeperServiceBase
             new {name = countryName});
     }
 
+
+    public async Task<List<Country>> GetAllCountries()
+    {
+        await using var connection = await Db.Get();
+        List<Country> output = new();
+        foreach (var country in  await connection.QueryAsync<Country>(
+                     "SELECT * FROM countries "))
+        {
+            if (country == null) continue;
+            output.Add(country);
+        }
+        return output;
+    }
+
     public async Task<Country?> GetCountryFromCode(string countryCode)
     {
         await using var connection = await Db.Get();

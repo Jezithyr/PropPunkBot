@@ -54,10 +54,10 @@ public partial class ResearchService : PeacekeeperServiceBase
     public ResearchService(SettingsService settings, PermissionsService perms, UserService users, DbService db, WorldStateService worldState, DiscordSocketClient client, TechService techs) : base(settings, perms, users, db, worldState, client)
     {
         _techs = techs;
-        worldState.RegisterTickEvent(OnWorldtick);
+        WorldState.RegisterTickEvent(OnWorldTick);
     }
 
-    private void OnWorldtick(int year, int quarter, DateOnly date)
+    private void OnWorldTick(int year, int quarter, DateOnly date)
     {
 
     }

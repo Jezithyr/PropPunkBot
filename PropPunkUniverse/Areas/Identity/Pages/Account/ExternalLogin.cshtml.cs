@@ -121,7 +121,7 @@ namespace PropPunkUniverse.Areas.Identity.Pages.Account
             }
 
             // Sign in the user with this external login provider if the user already has a login.
-            var result = await _signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: false, bypassTwoFactor: true);
+            var result = await _signInManager.ExternalLoginSignInAsync(info.LoginProvider, info.ProviderKey, isPersistent: true, bypassTwoFactor: true);
             if (result.Succeeded)
             {
                 _logger.LogInformation("{Name} logged in with {LoginProvider} provider.", info.Principal.Identity.Name, info.LoginProvider);
@@ -129,6 +129,7 @@ namespace PropPunkUniverse.Areas.Identity.Pages.Account
                 {
                     var user = await _userManager.FindByLoginAsync(info.LoginProvider,
                         info.ProviderKey);
+
                     var userClaims = await _userManager.GetClaimsAsync(user);
                     bool refreshSignIn = false;
 
@@ -207,7 +208,6 @@ namespace PropPunkUniverse.Areas.Identity.Pages.Account
                 var user = CreateUser();
                 await _userStore.SetUserNameAsync(user, info.Principal.FindFirst(ClaimTypes.Name)?.Value ?? "ErrorNoName",
                     CancellationToken.None);
-                ReturnUrl = Url.Content("~/");
                 await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
 
                 var result = await _userManager.CreateAsync(user);
@@ -242,18 +242,17 @@ namespace PropPunkUniverse.Areas.Identity.Pages.Account
                         await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",
                             $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
 
-                        // If account confirmation is required, we need to show the link if we don't have a real email sender
-                        if (_userManager.Options.SignIn.RequireConfirmedAccount)
-                        {
-                            return RedirectToPage("./RegisterConfirmation", new { Email = Input.Email });
-                        }
-
                         await _signInManager.SignInAsync(user, isPersistent: true, info.LoginProvider);
                         return LocalRedirect(returnUrl);
                     }
                 }
                 foreach (var error in result.Errors)
                 {
+                    if (error.Code == "DuplicateUserName")
+                    {
+                        ModelState.AddModelError(string.Empty, "You are already registered! If you see this, it is a bug and you should let Jezithyr know!");
+                        continue;
+                    }
                     ModelState.AddModelError(string.Empty, error.Description);
                 }
             }

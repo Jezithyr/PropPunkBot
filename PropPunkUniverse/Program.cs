@@ -17,7 +17,6 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddEntityFrameworkStores<DatabaseContext>();
 builder.Services.AddRazorPages();
-
 builder.Services.AddAuthentication().AddDiscord(options =>
 {
     options.ClientId = Env.Get("DISCORD_ID");

@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using PropPunkShared.Data.Models;
+using PropPunkShared.Database.Models;
 
-namespace PropPunkShared.Data;
+namespace PropPunkShared.Database;
 
 public class DatabaseContext : IdentityDbContext
 {
@@ -11,5 +11,14 @@ public class DatabaseContext : IdentityDbContext
     public DatabaseContext(DbContextOptions<DatabaseContext> options)
         : base(options)
     {
+    }
+
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        base.OnModelCreating(builder);
+
+        builder.Entity<Country>()
+            .Property(c => c.Id)
+            .HasDefaultValueSql("gen_random_uuid()");
     }
 }

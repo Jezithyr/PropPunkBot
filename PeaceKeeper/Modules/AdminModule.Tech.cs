@@ -1,5 +1,5 @@
 using Discord.Interactions;
-using PropPunkShared.Data.Models;
+using PropPunkShared.Database.Models;
 
 namespace PeaceKeeper.Modules;
 

@@ -1,4 +1,4 @@
-namespace PropPunkShared.Data.Models;
+namespace PropPunkShared.Database.Models;
 
 
 public record GlobalPermissionsRaw(long Id, int Permissions);

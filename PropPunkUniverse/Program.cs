@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using PropPunkShared;
-using PropPunkShared.Data;
+using PropPunkShared.Database;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,12 +11,18 @@ Env.EnsureLoadEnvFile();
 var connectionString = Env.CreateConnectionString() ??
                        throw new InvalidOperationException("Connection string not found.");
 builder.Services.AddDbContext<DatabaseContext>(options =>
-    options.UseNpgsql(connectionString));
+    options.UseNpgsql(connectionString, b => b.MigrationsAssembly("PropPunkUniverse")));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
     .AddEntityFrameworkStores<DatabaseContext>();
 builder.Services.AddRazorPages();
+
+builder.Services.AddAuthentication().AddDiscord(options =>
+{
+    options.ClientId = Env.Get("DISCORD_ID");
+    options.ClientSecret = Env.Get("DISCORD_SECRET");
+});
 
 var app = builder.Build();
 
@@ -37,8 +43,14 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapRazorPages();
+
+await using (var scope = app.Services.CreateAsyncScope())
+{
+    await scope.ServiceProvider.GetRequiredService<DatabaseContext>().Database.MigrateAsync();
+}
 
 app.Run();

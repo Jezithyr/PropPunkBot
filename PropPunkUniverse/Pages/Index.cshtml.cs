@@ -1,19 +1,21 @@
 ﻿using Microsoft.AspNetCore.Mvc.RazorPages;
-using PropPunkShared.Data;
-using PropPunkUniverse.Data;
+using Microsoft.EntityFrameworkCore;
+using PropPunkShared.Database;
 
 namespace PropPunkUniverse.Pages;
 
 public class IndexModel : PageModel
 {
     private readonly DatabaseContext _db;
+    public PropPunkShared.Database.Models.Country? Country;
 
     public IndexModel(DatabaseContext db)
     {
         _db = db;
     }
 
-    public void OnGet()
+    public async Task OnGet()
     {
+        Country = await _db.Countries.FirstOrDefaultAsync();
     }
 }

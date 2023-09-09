@@ -1,0 +1,25 @@
+﻿@page "{country}"
+@model PropPunkUniverse.Pages.Country
+
+@{
+    if (Model.Search == null)
+    {
+        ViewData["Title"] = "Country not found";
+    }
+    else
+    {
+        ViewData["Title"] = $"Country {Model.Search.ShortName}";
+    }
+}
+
+@if (Model.Search is { } country)
+{
+    <div>
+        <div>Id: @country.Id</div>
+        <div>Name: @country.Name (@country.ShortName)</div>
+    </div>
+}
+else
+{
+    <div>Country not found</div>
+}

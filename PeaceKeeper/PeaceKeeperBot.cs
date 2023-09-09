@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using PeaceKeeper.Services;
 using PropPunkShared;
-using PropPunkShared.Data;
+using PropPunkShared.Database;
 
 namespace PeaceKeeper;
 

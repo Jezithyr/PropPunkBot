@@ -6,6 +6,11 @@ public static class Env
 {
     private static bool _loaded;
 
+    public static string Get(string key)
+    {
+        return Environment.GetEnvironmentVariable(key) ?? throw new NullReferenceException();
+    }
+
     public static void EnsureLoadEnvFile()
     {
         if (_loaded)

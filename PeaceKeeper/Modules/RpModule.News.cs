@@ -2,10 +2,7 @@ using Dapper;
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
-using PeaceKeeper.Database;
-using PeaceKeeper.Database.Models;
-using PeaceKeeper.Modals;
-using ModalBuilder = Discord.Interactions.Builders.ModalBuilder;
+using PropPunkShared.Data.Models;
 
 namespace PeaceKeeper.Modules;
 

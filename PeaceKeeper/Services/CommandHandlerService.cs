@@ -1,7 +1,5 @@
-﻿using System.Reflection;
-using Discord.Commands;
+﻿using Discord.Commands;
 using Discord.WebSocket;
-using PeaceKeeper.Database;
 
 namespace PeaceKeeper.Services;
 
@@ -50,9 +48,8 @@ public class CommandHandlerService : PeacekeeperServiceBase
         _services = services;
     }
 
-    public CommandHandlerService(SettingsService settings, PermissionsService perms, UserService users, DbService db,
-        WorldStateService worldState, DiscordSocketClient client, CommandService commands) :
-        base(settings, perms, users, db, worldState, client)
+    public CommandHandlerService(DiscordSocketClient client, CommandService commands) :
+        base(client)
     {
         _commands = commands;
     }

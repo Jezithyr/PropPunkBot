@@ -1,7 +1,5 @@
-using Dapper;
 using Discord.Interactions;
-using PeaceKeeper.Database;
-using PeaceKeeper.Database.Models;
+using PropPunkShared.Data.Models;
 
 namespace PeaceKeeper.Modules;
 

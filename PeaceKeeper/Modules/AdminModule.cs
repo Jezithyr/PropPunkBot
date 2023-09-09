@@ -1,8 +1,7 @@
 using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
-using PeaceKeeper.Database.Models;
-using PeaceKeeper.Services;
+using PropPunkShared.Data.Models;
 
 namespace PeaceKeeper.Modules;
 

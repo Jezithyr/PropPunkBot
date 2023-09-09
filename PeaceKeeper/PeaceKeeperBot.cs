@@ -1,14 +1,14 @@
-
-using System.ComponentModel.Design;
 using System.Reflection;
-using Dapper;
 using Discord;
 using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using PeaceKeeper.Database;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using PeaceKeeper.Services;
+using PropPunkShared;
+using PropPunkShared.Data;
 
 namespace PeaceKeeper;
 
@@ -35,6 +35,7 @@ public sealed class PeaceKeeperBot
         services.AddSingleton<CommandService>();
         services.AddSingleton<CommandHandlerService>();
         services.AddSingleton(InteractionService);
+        services.AddNpgsql<DatabaseContext>(Env.CreateConnectionString());
         AutoRegisterServices(ref services, typeof(PeacekeeperCoreServiceBase));
         AutoRegisterServices(ref services, typeof(PeacekeeperServiceBase));
         _services = services.BuildServiceProvider();
@@ -52,7 +53,7 @@ public sealed class PeaceKeeperBot
 
     private void AutoRegisterServices(ref ServiceCollection services, Type serviceBaseClass)
     {
-        foreach (var type in typeof(PeaceKeeperBot).Assembly.GetTypes())
+        foreach (var type in serviceBaseClass.Assembly.GetTypes())
         {
             if (!type.IsAssignableTo(serviceBaseClass) || type.IsAbstract) continue;
             services.AddSingleton(type);

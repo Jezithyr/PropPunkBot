@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net7.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <Content Include="..\.dockerignore">
+        <Link>.dockerignore</Link>
+      </Content>
+        <None Remove="..\.env" />
+        <Content Include="..\.env">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+            <Link>.env</Link>
+        </Content>
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="7.0.10" />
+      <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="7.0.10" />
+      <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="7.0.10" />
+      <PackageReference Include="Npgsql" Version="8.0.0-preview.4" />
+      <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="7.0.4" />     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="7.0.9"/>
+    </ItemGroup>
+
+
+</Project>

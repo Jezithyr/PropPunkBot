@@ -9,6 +9,7 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 using Microsoft.AspNetCore.Identity;
@@ -44,6 +45,15 @@ namespace PropPunkUniverse.Areas.Identity.Pages.Account
             _logger = logger;
             _emailSender = emailSender;
         }
+
+        private readonly IReadOnlyDictionary<string, string> _claimsToSync =
+            new Dictionary<string, string>()
+            {
+                { "discord_profile_picture", "" },
+                { "discord_display_name", "" },
+                { ClaimTypes.NameIdentifier, "" },
+                { ClaimTypes.Name, "" },
+            };
 
         /// <summary>
         ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
@@ -81,7 +91,6 @@ namespace PropPunkUniverse.Areas.Identity.Pages.Account
             ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
             ///     directly from your code. This API may change or be removed in future releases.
             /// </summary>
-            [Required]
             [EmailAddress]
             public string Email { get; set; }
         }
@@ -116,6 +125,50 @@ namespace PropPunkUniverse.Areas.Identity.Pages.Account
             if (result.Succeeded)
             {
                 _logger.LogInformation("{Name} logged in with {LoginProvider} provider.", info.Principal.Identity.Name, info.LoginProvider);
+                if (_claimsToSync.Count > 0)
+                {
+                    var user = await _userManager.FindByLoginAsync(info.LoginProvider,
+                        info.ProviderKey);
+                    var userClaims = await _userManager.GetClaimsAsync(user);
+                    bool refreshSignIn = false;
+
+                    foreach (var addedClaim in _claimsToSync)
+                    {
+                        var userClaim = userClaims
+                            .FirstOrDefault(c => c.Type == addedClaim.Key);
+
+                        if (info.Principal.HasClaim(c => c.Type == addedClaim.Key))
+                        {
+                            var externalClaim = info.Principal.FindFirst(addedClaim.Key);
+
+                            if (userClaim == null)
+                            {
+                                await _userManager.AddClaimAsync(user,
+                                    new Claim(addedClaim.Key, externalClaim.Value));
+                                refreshSignIn = true;
+                            }
+                            else if (externalClaim!.Value != userClaim.Value)
+                            {
+                                await _userManager
+                                    .ReplaceClaimAsync(user, userClaim, externalClaim);
+                                refreshSignIn = true;
+                            }
+                        }
+                        else if (userClaim == null)
+                        {
+                            // Fill with a default value
+                            await _userManager.AddClaimAsync(user, new Claim(addedClaim.Key,
+                                addedClaim.Value));
+                            refreshSignIn = true;
+                        }
+                    }
+
+                    if (refreshSignIn)
+                    {
+                        await _userManager.SetUserNameAsync(user, info.Principal.FindFirst(ClaimTypes.Name)!.Value);
+                        await _signInManager.RefreshSignInAsync(user);
+                    }
+                }
                 return LocalRedirect(returnUrl);
             }
             if (result.IsLockedOut)
@@ -152,8 +205,9 @@ namespace PropPunkUniverse.Areas.Identity.Pages.Account
             if (ModelState.IsValid)
             {
                 var user = CreateUser();
-
-                await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
+                await _userStore.SetUserNameAsync(user, info.Principal.FindFirst(ClaimTypes.Name)?.Value ?? "ErrorNoName",
+                    CancellationToken.None);
+                ReturnUrl = Url.Content("~/");
                 await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
 
                 var result = await _userManager.CreateAsync(user);
@@ -164,7 +218,19 @@ namespace PropPunkUniverse.Areas.Identity.Pages.Account
                     {
                         _logger.LogInformation("User created an account using {Name} provider.", info.LoginProvider);
 
+                        await _userManager.AddClaimAsync(user,info.Principal.FindFirst(ClaimTypes.Name)!);
+                        await _userManager.AddClaimAsync(user,info.Principal.FindFirst(ClaimTypes.NameIdentifier)!);
+                        await _userManager.AddClaimAsync(user,info.Principal.FindFirst("discord_profile_picture")!);
+                        if (info.Principal.HasClaim(c => c.Type == "discord_display_name"))
+                        {
+                            await _userManager.AddClaimAsync(user,
+                                info.Principal.FindFirst("discord_display_name")!);
+                        }
+
+                        await _userManager.SetUserNameAsync(user, info.Principal.FindFirst(ClaimTypes.Name)!.Value);
                         var userId = await _userManager.GetUserIdAsync(user);
+
+                        //TODO: If has email
                         var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
                         code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
                         var callbackUrl = Url.Page(
@@ -182,7 +248,7 @@ namespace PropPunkUniverse.Areas.Identity.Pages.Account
                             return RedirectToPage("./RegisterConfirmation", new { Email = Input.Email });
                         }
 
-                        await _signInManager.SignInAsync(user, isPersistent: false, info.LoginProvider);
+                        await _signInManager.SignInAsync(user, isPersistent: true, info.LoginProvider);
                         return LocalRedirect(returnUrl);
                     }
                 }

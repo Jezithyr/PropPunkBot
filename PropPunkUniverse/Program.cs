@@ -1,3 +1,8 @@
+using System.Globalization;
+using System.Net.Http.Headers;
+using System.Text.Json;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using PropPunkShared;
@@ -21,7 +26,20 @@ builder.Services.AddAuthentication().AddDiscord(options =>
 {
     options.ClientId = Env.Get("DISCORD_ID");
     options.ClientSecret = Env.Get("DISCORD_SECRET");
+    options.Scope.Clear();
+    options.Scope.Add("identify guilds");
+    options.SaveTokens = true;
+    options.ClaimActions.MapJsonKey("discord_display_name","global_name", "string");
+    options.ClaimActions.MapCustomJson("discord_profile_picture", user =>
+        string.Format(
+            CultureInfo.InvariantCulture,
+            "https://cdn.discordapp.com/avatars/{0}/{1}.{2}",
+            user.GetString("id"),
+            user.GetString("avatar"),
+            user.GetString("avatar")!.StartsWith("a_") ? "gif" : "png"));
 });
+
+
 
 var app = builder.Build();
 
@@ -36,7 +54,6 @@ else
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
-
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 

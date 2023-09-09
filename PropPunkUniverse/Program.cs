@@ -19,7 +19,11 @@ builder.Services.AddDbContext<DatabaseContext>(options =>
     options.UseNpgsql(connectionString, b => b.MigrationsAssembly("PropPunkUniverse")));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
+builder.Services.AddDefaultIdentity<IdentityUser>(options =>
+    {
+        options.SignIn.RequireConfirmedAccount = false;
+        options.SignIn.RequireConfirmedEmail = false;
+    })
     .AddEntityFrameworkStores<DatabaseContext>();
 builder.Services.AddRazorPages();
 builder.Services.AddAuthentication().AddDiscord(options =>

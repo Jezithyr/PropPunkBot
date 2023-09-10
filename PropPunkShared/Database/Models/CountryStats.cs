@@ -12,7 +12,7 @@ public record CountryStatsRaw(
     );
 
 public record CountryStats(
-    Country Country,
+    CountryModel CountryModel,
     int Population,
     float Happiness,
     float FertilityMod,

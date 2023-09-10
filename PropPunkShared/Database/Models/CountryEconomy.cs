@@ -13,7 +13,7 @@ public record CountryEconomyRaw(
 );
 
 public record CountryEconomy(
-    Country Country,
+    CountryModel CountryModel,
     float IndividualTaxRate,
     float SalesTax,
     float CorporateTaxRate,

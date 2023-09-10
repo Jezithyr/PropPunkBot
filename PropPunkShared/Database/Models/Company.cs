@@ -10,4 +10,4 @@ public record Company(
     Guid Id,
     string Name,
     string ShortName,
-    Country? OwningCountry);
+    CountryModel? OwningCountry);

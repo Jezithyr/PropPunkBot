@@ -6,7 +6,7 @@ namespace PropPunkShared.Database;
 
 public class DatabaseContext : IdentityDbContext
 {
-    public DbSet<Country> Countries { get; set; } = default!;
+    public DbSet<CountryModel> Countries { get; set; } = default!;
 
     public DatabaseContext(DbContextOptions<DatabaseContext> options)
         : base(options)
@@ -17,7 +17,7 @@ public class DatabaseContext : IdentityDbContext
     {
         base.OnModelCreating(builder);
 
-        builder.Entity<Country>()
+        builder.Entity<CountryModel>()
             .Property(c => c.Id)
             .HasDefaultValueSql("gen_random_uuid()");
     }

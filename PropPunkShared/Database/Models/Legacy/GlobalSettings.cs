@@ -8,7 +8,7 @@ public record GlobalSettingsRaw(
     int CompanyResearchSlotCount,
     long OfficialServerId,
     int MoneyPerTechPoint
-    );
+);
 
 public record GlobalSettings(
     int AotYearStart,
@@ -29,5 +29,4 @@ public record GlobalSettings(
         )
     {
     }
-
 }

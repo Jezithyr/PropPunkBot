@@ -1,0 +1,80 @@
+@page
+@using Microsoft.EntityFrameworkCore
+@model List
+@{
+    ViewData["Title"] = "Country Registry";
+}
+<h1>@ViewData["Title"]</h1>
+@if (Model.Config.Config.CountryAppsAllowed)
+{
+    if (User.Identity is not {IsAuthenticated: true })
+    {
+        <p>Country applications are OPEN, if you wish to apply for a country login and check the applications page for more info!</p>
+    }
+    else
+    {
+        <p>Country applications are OPEN, if you wish to apply for a country click here or check the applications page for more info!</p>
+    }
+
+}
+<div class="table-responsive">
+    <table class="table table-sm table-bordered">
+        <thead class="thead-dark">
+        <tr>
+            <th></th>
+            <th>
+                <div>Code</div>
+            </th>
+            <th>
+                <div>Name</div>
+            </th>
+            <th>
+                <div>Government Type</div>
+            </th>
+            <th>
+                <div>Population</div>
+            </th>
+            <th>
+                <div>GDP</div>
+            </th>
+            <th>
+                <div>Happiness</div>
+            </th>
+            <th>
+                <div>Education</div>
+            </th>
+        </tr>
+        </thead>
+        <tbody>
+            @await foreach (var country in Model.Db.Countries.Include(countryModel => countryModel.GovernmentModel).AsAsyncEnumerable())
+            {
+                <tr>
+                    <td>
+                        <a asp-page="/country/index" asp-route-country="@country.Id" class="btn btn-primary"><i class="fa fa-edit"></i>View</a>
+                    </td>
+                    <td>
+                        @country.ShortName
+                    </td>
+                    <td>
+                        @country.Name
+                    </td>
+                    <td>
+                        @country.GovernmentModel.Name
+                    </td>
+                    <td>
+                        PlaceholderPop
+                    </td>
+                    <td>
+                        PlaceholderGDP
+                    </td>
+                    <td>
+                        PlaceholderHappiness
+                    </td>
+                    <td>
+                        PlaceholderEducation
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

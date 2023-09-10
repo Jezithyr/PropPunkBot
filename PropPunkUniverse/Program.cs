@@ -1,12 +1,10 @@
 using System.Globalization;
-using System.Net.Http.Headers;
-using System.Text.Json;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using PropPunkShared;
 using PropPunkShared.Database;
+using PropPunkShared.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +16,8 @@ var connectionString = Env.CreateConnectionString() ??
 builder.Services.AddDbContext<DatabaseContext>(options =>
     options.UseNpgsql(connectionString, b => b.MigrationsAssembly("PropPunkUniverse")));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+builder.Services.AddSingleton<ConfigService>();
+builder.Services.AddScoped<ConfigSyncService>();
 
 builder.Services.AddDefaultIdentity<IdentityUser>(options =>
     {
@@ -72,5 +72,6 @@ await using (var scope = app.Services.CreateAsyncScope())
 {
     await scope.ServiceProvider.GetRequiredService<DatabaseContext>().Database.MigrateAsync();
 }
+app.Services.GetService<ConfigService>()?.UpdateCachedSettings();
 
 app.Run();

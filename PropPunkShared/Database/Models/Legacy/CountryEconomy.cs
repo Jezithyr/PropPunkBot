@@ -1,6 +1,5 @@
 namespace PropPunkShared.Database.Models;
 
-
 public record CountryEconomyRaw(
     Guid CountryId,
     float IndividualTaxRate,

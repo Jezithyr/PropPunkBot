@@ -8,7 +8,7 @@ public record NewsRaw(
     string Text,
     string? ImageLink,
     string? OrganizationIconLink
-    );
+);
 
 public record News(
     Guid Id,
@@ -18,14 +18,13 @@ public record News(
     string Text,
     string? ImageLink,
     string? OrganizationIconLink
-    )
+)
 {
     public News(NewsRaw raw) : this(raw.Id, raw.Organization, raw.NewsType, DateTime.Parse(raw.Date), raw.Text,
         raw.ImageLink, raw.OrganizationIconLink)
     {
     }
 }
-
 
 public enum NewsType
 {

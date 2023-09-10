@@ -9,7 +9,7 @@ public record CountryStatsRaw(
     float EducationIndex,
     float GdpPerCapMultiplier,
     float Urbanization
-    );
+);
 
 public record CountryStats(
     CountryModel CountryModel,

@@ -8,5 +8,12 @@ namespace PropPunkShared.Database.Models;
 public record CountryModel(
     [property: Key] Guid Id,
     [property: StringLength(128)] string Name,
-    [property: StringLength(128)] string ShortName
-);
+    [property: StringLength(4)] string ShortName
+)
+{
+    [Required]
+    public Guid GovernmentModelId { get; set; }
+
+    [Required]
+    public GovernmentModel GovernmentModel { get; set; } = default!;
+}

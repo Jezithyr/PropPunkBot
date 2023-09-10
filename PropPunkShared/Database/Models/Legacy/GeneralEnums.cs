@@ -12,5 +12,5 @@ public enum RpMode
     OOC,
     GeneralCharacter,
     Country,
-    Company,
+    Company
 }

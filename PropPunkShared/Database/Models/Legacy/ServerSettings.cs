@@ -11,5 +11,5 @@ public enum BotEnvironment
 {
     CommunityServer = 0,
     LiveServer,
-    Development,
+    Development
 }

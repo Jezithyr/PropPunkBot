@@ -1,4 +1,5 @@
 namespace PropPunkShared.Database.Models;
+
 public record Technology(
     Guid Id,
     string Name,
@@ -10,7 +11,7 @@ public record Technology(
 public record TechRequirementRaw(
     Guid TechId,
     Guid RequirementId
-    );
+);
 
 public record TechRequirement(
     Technology Tech,

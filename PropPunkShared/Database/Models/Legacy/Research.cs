@@ -1,6 +1,6 @@
 namespace PropPunkShared.Database.Models;
 
-public record CountryResearchSlot( CountryModel CountryModel, int SlotNumber, Technology? Tech);
+public record CountryResearchSlot(CountryModel CountryModel, int SlotNumber, Technology? Tech);
 
 public record CountryResearchSlotRaw(Guid CountryId, int SlotNumber, Guid? TechId);
 
@@ -23,4 +23,3 @@ public record CompanyResearchMetaData(Guid CompanyId, int PointOverflow, float R
 public record CompanyResearchProgressRaw(Guid CompanyId, Guid TechId, decimal Completion);
 
 public record CompanyResearchProgress(Company Company, Technology Tech, decimal Completion);
-

@@ -1,6 +1,5 @@
 namespace PropPunkShared.Database.Models;
 
-
 public record CompanyEconomyRaw(
     Guid CompanyId,
     long Funds,

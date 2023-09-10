@@ -9,7 +9,7 @@ public record WorldStateRaw(
     int WorldGdp,
     float WorldGdpGrowth,
     float WorldFertility
-    );
+);
 
 public record WorldState(
     DateOnly StartDate,

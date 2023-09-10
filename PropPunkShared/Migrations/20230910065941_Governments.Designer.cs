@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PropPunkShared.Database;
@@ -11,9 +12,11 @@ using PropPunkShared.Database;
 namespace PropPunkShared.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20230910065941_Governments")]
+    partial class Governments
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -218,22 +221,6 @@ namespace PropPunkShared.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("PropPunkShared.Database.Models.ConfigModel", b =>
-                {
-                    b.Property<int>("Environment")
-                        .HasColumnType("integer");
-
-                    b.Property<bool>("CompanyAppsAllowed")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("CountryAppsAllowed")
-                        .HasColumnType("boolean");
-
-                    b.HasKey("Environment");
-
-                    b.ToTable("configs");
-                });
-
             modelBuilder.Entity("PropPunkShared.Database.Models.CountryModel", b =>
                 {
                     b.Property<Guid>("Id")
@@ -251,8 +238,8 @@ namespace PropPunkShared.Migrations
 
                     b.Property<string>("ShortName")
                         .IsRequired()
-                        .HasMaxLength(4)
-                        .HasColumnType("character varying(4)");
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
 
                     b.HasKey("Id");
 
@@ -271,8 +258,7 @@ namespace PropPunkShared.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasDefaultValueSql("gen_random_uuid()");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Name")
                         .IsRequired()

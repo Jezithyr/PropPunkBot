@@ -1,0 +1,39 @@
+@{
+    string countryName = "Error";
+    string countryShortName = "ERR";
+    Layout = "Shared/_Layout";
+    if (Model is PanelModel {Search: not null } panelModel)
+    {
+        countryName = panelModel.Search.Name;
+        countryShortName = panelModel.Search.ShortName;
+    }
+}
+
+@if (Model.Search is { } country)
+{
+
+    <h1>[@countryShortName] @countryName Panel</h1>
+    <div>
+        <div class="row">
+            <div class="col-md-3">
+                <partial name="_CountryPanelNav"/>
+            </div>
+            <div class="col-md-9">
+                @RenderBody()
+            </div>
+        </div>
+    </div>
+    <!--Page redirect-->
+    <a asp-page="/country/index" asp-route-country="@country.Id" class="btn btn-primary"><i class="fa fa-edit"></i>Return to Country Page</a>
+}
+else
+{
+    <h1>Country Not Found</h1>
+    IgnoreBody();
+    <!--Page redirect-->
+    <a asp-page="/country/list" class="btn btn-primary"><i class="fa fa-edit"></i>Return to Country List</a>
+}
+
+@section Scripts {
+@RenderSection("Scripts", required: false)
+}

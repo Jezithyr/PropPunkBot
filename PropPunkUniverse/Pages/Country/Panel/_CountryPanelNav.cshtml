@@ -1,0 +1,21 @@
+@{
+}
+
+@if (Model is PanelModel {Search: not null } panelModel)
+{
+    <ul class="nav nav-pills flex-column">
+        <li class="nav-item"><a class="btn btn-primary" id="edit-main" asp-route-country="@panelModel.Search.Id" asp-page="/Country/Panel/Index">Dashboard</a></li>
+        <li class="nav-item"><a class="btn btn-primary" id="edit-lore" asp-route-country="@panelModel.Search.Id" asp-page="/Country/Panel/Lore/Index">Edit Lore</a></li>
+        <li class="nav-item"><a class="btn btn-primary" id="edit-gov" asp-route-country="@panelModel.Search.Id" asp-page="/Country/Panel/Members/Index">Members</a></li>
+        <li class="nav-item"><a class="btn btn-primary" id="edit-settings" asp-route-country="@panelModel.Search.Id" asp-page="/Country/Panel/Settings/Index">Settings</a></li>
+        <li class="nav-item"><a class="btn btn-primary" id="edit-danger" asp-route-country="@panelModel.Search.Id" asp-page="/Country/Panel/Settings/DangerZone">Danger Zone</a></li>
+    </ul>
+    <br/>
+    <br/>
+}
+else
+{
+    <h1>ERROR</h1>
+}
+
+

@@ -1,5 +1,5 @@
 ﻿@page "{country?}"
-@model Index
+@model CountryIndex
 
 @{
     if (Model.Search == null)
@@ -18,7 +18,7 @@
     <h5>Owner: PLACEHOLDER</h5>
     <a asp-page="/country/list" class="btn btn-primary"><i class="fa fa-edit"></i>Return to countries list</a>
     //TODO if user owns this country or has country edit permissions
-    <a asp-page="/country/panel" asp-route-country="@country.Id" class="btn btn-primary"><i class="fa fa-edit"></i>Open panel</a>
+    <a asp-page="/country/panel/index" asp-route-country="@country.Id" class="btn btn-primary"><i class="fa fa-edit"></i>Open panel</a>
 }
 else
 {

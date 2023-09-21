@@ -4,12 +4,17 @@ using PropPunkShared.Database;
 
 namespace PropPunkUniverse.Pages.Country;
 
-public class Index : PageModel
+public abstract class CountryPageModel : PageModel
+{
+    public PropPunkShared.Database.Models.CountryModel? Search;
+}
+
+public class CountryIndex : CountryPageModel
 {
     private readonly DatabaseContext _db;
-    public PropPunkShared.Database.Models.CountryModel? Search;
 
-    public Index(DatabaseContext db)
+
+    public CountryIndex(DatabaseContext db)
     {
         _db = db;
     }

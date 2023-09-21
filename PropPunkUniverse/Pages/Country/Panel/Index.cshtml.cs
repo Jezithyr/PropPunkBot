@@ -2,19 +2,16 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using PropPunkShared.Database;
 
-namespace PropPunkUniverse.Pages.Country;
+namespace PropPunkUniverse.Pages.Country.Panel;
 
-public class Panel : PageModel
+public class PanelModel : CountryPageModel
 {
     private readonly DatabaseContext _db;
-    public PropPunkShared.Database.Models.CountryModel? Search;
-
-    public Panel(DatabaseContext db)
+    public PanelModel(DatabaseContext db)
     {
         _db = db;
     }
-
-    public async Task OnGet(string? country)
+    public virtual async Task OnGet(string? country)
     {
         if (RouteData.Values.TryGetValue("id", out var idOverride))
         {

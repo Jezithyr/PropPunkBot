@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using PropPunkShared;
 using PropPunkShared.Database;
 using PropPunkShared.Services;
+using PropPunkUniverse.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,7 +17,11 @@ var connectionString = Env.CreateConnectionString() ??
 builder.Services.AddDbContext<DatabaseContext>(options =>
     options.UseNpgsql(connectionString, b => b.MigrationsAssembly("PropPunkUniverse")));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
-builder.Services.AddSingleton<ConfigService>();
+//auto register service dependencies
+ServiceBase.AutoRegisterServices(
+    builder.Services,
+    typeof(ConfigService).Assembly,
+    typeof(CountryService).Assembly);
 builder.Services.AddScoped<ConfigSyncService>();
 
 builder.Services.AddDefaultIdentity<IdentityUser>(options =>

@@ -1,0 +1,12 @@
+@page "{country?}"
+@model PanelModel
+@{
+    if (Model.Search == null)
+    {
+        ViewData["Title"] = "Country not found";
+    }
+    else
+    {
+        ViewData["Title"] = $"PropPunk {Model.Search.ShortName}";
+    }
+}

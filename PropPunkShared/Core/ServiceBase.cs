@@ -1,7 +1,7 @@
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace PropPunkShared.Services;
+namespace PropPunkShared.Core;
 
 
 public abstract class ScopedServiceBase

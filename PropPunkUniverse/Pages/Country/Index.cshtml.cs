@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using PropPunkShared.Database;
+using PropPunkShared.Services;
 
 namespace PropPunkUniverse.Pages.Country;
 
@@ -11,18 +12,14 @@ public abstract class CountryPageModel : PageModel
 
 public class CountryIndex : CountryPageModel
 {
-    private readonly DatabaseContext _db;
+    private readonly CountryService _countries;
 
-
-    public CountryIndex(DatabaseContext db)
+    public CountryIndex(CountryService countries)
     {
-        _db = db;
+        _countries = countries;
     }
     public async Task OnGet(string? country)
     {
-        if (!Guid.TryParse(country, out var guid))
-            return;
-
-        Search = await _db.Countries.FirstOrDefaultAsync(c => c.Id == guid);
+        Search = await _countries.GetAsync(country);
     }
 }

@@ -13,10 +13,10 @@ public class PanelModel : CountryPageModel
     }
     public virtual async Task OnGet(string? country)
     {
-        if (RouteData.Values.TryGetValue("id", out var idOverride))
-        {
-            country = idOverride?.ToString();
-        }
+        // if (RouteData.Values.TryGetValue("id", out var idOverride))
+        // {
+        //     country = idOverride?.ToString();
+        // }
         if (!Guid.TryParse(country, out var guid))
             return;
 

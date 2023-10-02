@@ -3,9 +3,9 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using PropPunkShared;
+using PropPunkShared.Core;
 using PropPunkShared.Database;
 using PropPunkShared.Services;
-using PropPunkUniverse.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 

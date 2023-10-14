@@ -18,7 +18,7 @@ builder.Services.AddDbContext<DatabaseContext>(options =>
     options.UseNpgsql(connectionString, b => b.MigrationsAssembly("PropPunkUniverse")));
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 //auto register service dependencies
-ServiceBase.AutoRegisterServices(
+SingletonServiceBase.AutoRegisterServices(
     builder.Services,
     typeof(ConfigService).Assembly,
     typeof(CountryService).Assembly);

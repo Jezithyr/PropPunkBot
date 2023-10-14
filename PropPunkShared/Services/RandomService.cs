@@ -2,7 +2,7 @@ using PropPunkShared.Core;
 
 namespace PropPunkShared.Services;
 
-public sealed class RandomService : ServiceBase
+public sealed class RandomService : SingletonServiceBase
 {
     private readonly Random _random = new();
 

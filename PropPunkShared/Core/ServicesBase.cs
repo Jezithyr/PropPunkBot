@@ -9,18 +9,18 @@ public abstract class ScopedServiceBase
     public static void AutoRegisterServices(ref ServiceCollection services,
         params Assembly[] assemblies)
     {
-        ServiceBase.AutoRegisterServices(services, assemblies);
+        SingletonServiceBase.AutoRegisterServices(services, assemblies);
     }
 
     public static void AutoRegisterServices(IServiceCollection services,
         params Assembly[] assemblies)
     {
-        ServiceBase.AutoRegisterServices(services, assemblies);
+        SingletonServiceBase.AutoRegisterServices(services, assemblies);
     }
 }
 
 
-public abstract class ServiceBase
+public abstract class SingletonServiceBase
 {
     public static void AutoRegisterServices(ref ServiceCollection services,
         params Assembly[] assemblies)
@@ -30,7 +30,7 @@ public abstract class ServiceBase
             foreach (var type in assembly.GetTypes())
             {
                 if (type.IsAbstract) continue;
-                if (type.IsAssignableTo(typeof(ServiceBase)))
+                if (type.IsAssignableTo(typeof(SingletonServiceBase)))
                     services.AddSingleton(type);
                 if (type.IsAssignableTo(typeof(ScopedServiceBase)))
                     services.AddScoped(type);
@@ -45,7 +45,7 @@ public abstract class ServiceBase
             foreach (var type in assembly.GetTypes())
             {
                 if (type.IsAbstract) continue;
-                if (type.IsAssignableTo(typeof(ServiceBase)))
+                if (type.IsAssignableTo(typeof(SingletonServiceBase)))
                     services.AddSingleton(type);
                 if (type.IsAssignableTo(typeof(ScopedServiceBase)))
                     services.AddScoped(type);

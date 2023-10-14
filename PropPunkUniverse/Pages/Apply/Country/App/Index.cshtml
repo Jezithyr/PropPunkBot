@@ -1,0 +1,15 @@
+﻿@page "{country?}"
+@model CountryAppIndex
+
+@{
+    ViewData["Title"] = "Country Application:";
+}
+
+@if (Model.ApplicationsOpen)
+{
+
+}
+else
+{
+    <h1>Country Applications are currently closed!</h1>
+}

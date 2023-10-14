@@ -6,7 +6,7 @@ using PropPunkShared.Database.Models;
 
 namespace PropPunkShared.Core;
 
-public sealed class ConfigService : ServiceBase
+public sealed class ConfigService : SingletonServiceBase
 {
     private ConfigModel? _config;
     private readonly IServiceScopeFactory _serviceScopeFactory;
@@ -17,11 +17,11 @@ public sealed class ConfigService : ServiceBase
     }
 
 
-    public ConfigModel Config
+    public ref ConfigModel Config
     {
         get
         {
-            if (_config != null) return _config;
+            if (_config != null) return ref _config!;
             throw new ArgumentException($"No Config found for {GetAppEnvironment()}!");
         }
     }

@@ -4,7 +4,7 @@ using PropPunkShared.Database.Models;
 
 namespace PropPunkShared.Services;
 
-public sealed class TechnologyService : ServiceBase
+public sealed class TechnologyService : ScopedServiceBase
 {
     private DatabaseContext _db;
 

@@ -1,11 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using PropPunkShared.Core;
 using PropPunkShared.Database;
 using PropPunkShared.Database.Models;
 
-namespace PropPunkShared.Services;
+namespace PropPunkShared.Core;
 
 public sealed class ConfigService : ServiceBase
 {

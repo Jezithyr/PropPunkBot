@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PropPunkShared.Database;
@@ -11,9 +12,11 @@ using PropPunkShared.Database;
 namespace PropPunkShared.Migrations
 {
     [DbContext(typeof(DatabaseContext))]
-    partial class DatabaseContextModelSnapshot : ModelSnapshot
+    [Migration("20231002235943_Techs")]
+    partial class Techs
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -281,16 +284,13 @@ namespace PropPunkShared.Migrations
                         .HasColumnType("uuid")
                         .HasDefaultValueSql("gen_random_uuid()");
 
-                    b.Property<Guid>("GovernmentId")
+                    b.Property<Guid>("GovernmentModelId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)");
-
-                    b.Property<Guid>("ResearchId")
-                        .HasColumnType("uuid");
 
                     b.Property<string>("ShortName")
                         .IsRequired()
@@ -299,84 +299,15 @@ namespace PropPunkShared.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("GovernmentId");
+                    b.HasIndex("GovernmentModelId");
 
                     b.HasIndex("Name")
                         .IsUnique();
-
-                    b.HasIndex("ResearchId");
 
                     b.HasIndex("ShortName")
                         .IsUnique();
 
                     b.ToTable("countries");
-                });
-
-            modelBuilder.Entity("PropPunkShared.Database.Models.CountryResearch", b =>
-                {
-                    b.Property<Guid>("CountryId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("PointOverflow")
-                        .HasColumnType("integer");
-
-                    b.HasKey("CountryId");
-
-                    b.ToTable("countries_research");
-                });
-
-            modelBuilder.Entity("PropPunkShared.Database.Models.CountryResearchModifier", b =>
-                {
-                    b.Property<Guid>("CountryId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("CountryResearchCountryId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Field")
-                        .HasColumnType("integer");
-
-                    b.Property<float>("Modifier")
-                        .HasColumnType("real");
-
-                    b.HasKey("CountryId");
-
-                    b.HasIndex("CountryResearchCountryId");
-
-                    b.HasIndex("CountryId", "Field")
-                        .IsUnique();
-
-                    b.ToTable("countries_research_mods");
-                });
-
-            modelBuilder.Entity("PropPunkShared.Database.Models.CountryResearchSlot", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("CountryId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("CountryResearchCountryId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("PointProgress")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("TechId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CountryId");
-
-                    b.HasIndex("CountryResearchCountryId");
-
-                    b.HasIndex("TechId");
-
-                    b.ToTable("countries_research_slots");
                 });
 
             modelBuilder.Entity("PropPunkShared.Database.Models.GovernmentModel", b =>
@@ -452,7 +383,7 @@ namespace PropPunkShared.Migrations
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)");
 
-                    b.Property<int>("RawResearchCost")
+                    b.Property<int>("ResearchCost")
                         .HasColumnType("integer");
 
                     b.Property<int>("Use")
@@ -478,7 +409,7 @@ namespace PropPunkShared.Migrations
 
                     b.HasIndex("RequirementsId");
 
-                    b.ToTable("TechnologyModelTechnologyModel");
+                    b.ToTable("tech_requirements");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -553,62 +484,13 @@ namespace PropPunkShared.Migrations
 
             modelBuilder.Entity("PropPunkShared.Database.Models.CountryModel", b =>
                 {
-                    b.HasOne("PropPunkShared.Database.Models.GovernmentModel", "Government")
+                    b.HasOne("PropPunkShared.Database.Models.GovernmentModel", "GovernmentModel")
                         .WithMany("Countries")
-                        .HasForeignKey("GovernmentId")
+                        .HasForeignKey("GovernmentModelId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("PropPunkShared.Database.Models.CountryResearch", "Research")
-                        .WithMany()
-                        .HasForeignKey("ResearchId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Government");
-
-                    b.Navigation("Research");
-                });
-
-            modelBuilder.Entity("PropPunkShared.Database.Models.CountryResearch", b =>
-                {
-                    b.HasOne("PropPunkShared.Database.Models.CountryModel", "Country")
-                        .WithMany()
-                        .HasForeignKey("CountryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Country");
-                });
-
-            modelBuilder.Entity("PropPunkShared.Database.Models.CountryResearchModifier", b =>
-                {
-                    b.HasOne("PropPunkShared.Database.Models.CountryResearch", null)
-                        .WithMany("ResearchMods")
-                        .HasForeignKey("CountryResearchCountryId");
-                });
-
-            modelBuilder.Entity("PropPunkShared.Database.Models.CountryResearchSlot", b =>
-                {
-                    b.HasOne("PropPunkShared.Database.Models.CountryModel", "Country")
-                        .WithMany()
-                        .HasForeignKey("CountryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("PropPunkShared.Database.Models.CountryResearch", null)
-                        .WithMany("ResearchSlots")
-                        .HasForeignKey("CountryResearchCountryId");
-
-                    b.HasOne("PropPunkShared.Database.Models.TechnologyModel", "Tech")
-                        .WithMany()
-                        .HasForeignKey("TechId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Country");
-
-                    b.Navigation("Tech");
+                    b.Navigation("GovernmentModel");
                 });
 
             modelBuilder.Entity("PropPunkShared.Database.Models.RegionModel", b =>
@@ -635,13 +517,6 @@ namespace PropPunkShared.Migrations
                         .HasForeignKey("RequirementsId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("PropPunkShared.Database.Models.CountryResearch", b =>
-                {
-                    b.Navigation("ResearchMods");
-
-                    b.Navigation("ResearchSlots");
                 });
 
             modelBuilder.Entity("PropPunkShared.Database.Models.GovernmentModel", b =>

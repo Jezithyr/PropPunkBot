@@ -11,9 +11,11 @@ public record CountryModel(
     [property: StringLength(4)] string ShortName
 )
 {
-    [Required]
-    public Guid GovernmentModelId { get; set; }
+    [ForeignKey(nameof(Research))]
+    public Guid ResearchId { get; set; }
+    public CountryResearch Research { get; set; } = default!;
 
-    [Required]
-    public GovernmentModel GovernmentModel { get; set; } = default!;
+    [ForeignKey(nameof(Government))]
+    public Guid GovernmentId { get; set; }
+    [Required] public GovernmentModel Government { get; set; } = default!;
 }

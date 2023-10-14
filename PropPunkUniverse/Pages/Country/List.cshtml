@@ -46,7 +46,7 @@
         </tr>
         </thead>
         <tbody>
-            @await foreach (var country in Model.Db.Countries.Include(countryModel => countryModel.GovernmentModel).AsAsyncEnumerable())
+            @await foreach (var country in Model.Db.Countries.Include(countryModel => countryModel.Government).AsAsyncEnumerable())
             {
                 <tr>
                     <td>
@@ -59,7 +59,7 @@
                         @country.Name
                     </td>
                     <td>
-                        @country.GovernmentModel.Name
+                        @country.Government.Name
                     </td>
                     <td>
                         PlaceholderPop

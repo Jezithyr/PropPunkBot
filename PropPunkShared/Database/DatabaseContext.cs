@@ -11,7 +11,7 @@ public class DatabaseContext : IdentityDbContext
     public DbSet<ConfigModel> Configs { get; set; } = default!;
     public DbSet<RegionModel> Regions { get; set; } = default!;
     public DbSet<CityModel> Cities { get; set; } = default!;
-
+    public DbSet<TechnologyModel> Techs { get; set; } = default!;
 
     public DatabaseContext(DbContextOptions<DatabaseContext> options)
         : base(options)
